@@ -25,23 +25,23 @@
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:zoom="0.49497475"
-     inkscape:cx="-1629.024"
-     inkscape:cy="499.66174"
+     inkscape:cx="-381.60562"
+     inkscape:cy="-130.95088"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
      showgrid="false"
      units="px"
-     inkscape:window-width="1920"
-     inkscape:window-height="1017"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1"
+     inkscape:window-width="958"
+     inkscape:window-height="1008"
+     inkscape:window-x="953"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
      borderlayer="true"
      inkscape:snap-center="true"
      inkscape:object-nodes="true"
      inkscape:snap-nodes="true"
-     inkscape:snap-others="true"
+     inkscape:snap-others="false"
      inkscape:snap-object-midpoints="true"
      inkscape:snap-grids="true">
     <inkscape:grid
@@ -61,7 +61,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -111,42 +111,8 @@
          y="39.635132"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14.1111px;font-family:Roboto;-inkscape-font-specification:Roboto;fill:#ffffff;stroke-width:0.264583;">Panotroller v1.1</tspan></text>
     <g
-       id="g6626"
-       transform="translate(0,10.583339)">
-      <rect
-         style="display:inline;fill:#666666;fill-opacity:1;stroke:none;stroke-width:1.44116;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         id="rect28-0-1-3"
-         width="264.58331"
-         height="31.749998"
-         x="-296.33331"
-         y="74.083336"
-         rx="2.1166666"
-         ry="2.1166666" />
-      <text
-         xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.2889px;line-height:1.25;font-family:Roboto;-inkscape-font-specification:Roboto;letter-spacing:0px;display:inline;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-opacity:1"
-         x="-209.34464"
-         y="95.181099"
-         id="text909-7-3-6-8-5"><tspan
-           sodipodi:role="line"
-           x="-209.34464"
-           y="95.181099"
-           style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14.1111px;font-family:Roboto;-inkscape-font-specification:'Roboto Bold';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-opacity:1"
-           id="tspan416">Pair Bluetooth</tspan><tspan
-           sodipodi:role="line"
-           x="-209.34464"
-           y="110.35055"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.2889px;font-family:Roboto;-inkscape-font-specification:Roboto;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-opacity:1"
-           id="tspan3314-5-4-9" /><tspan
-           sodipodi:role="line"
-           x="-209.34464"
-           y="124.46168"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.2889px;font-family:Roboto;-inkscape-font-specification:Roboto;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-opacity:1"
-           id="tspan3312-3-0-8" /></text>
-    </g>
-    <g
        id="g6619"
-       transform="translate(0,10.583339)">
+       transform="translate(-1.1011704e-5,-31.750015)">
       <rect
          style="display:inline;fill:#666666;fill-opacity:1;stroke:none;stroke-width:2.63119;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          id="rect28-0-1-3-2-2"
@@ -333,15 +299,6 @@
        x="-494.24164"
        y="354.54172"
        transform="scale(-1,1)" />
-    <rect
-       style="display:inline;fill:#666666;fill-opacity:0.75;stroke:none;stroke-width:2.63119;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       id="rect28-0-1-3-2-2-0"
-       width="264.58331"
-       height="105.83331"
-       x="-296.33331"
-       y="127.00002"
-       rx="2.1166666"
-       ry="2.1166666" />
     <rect
        style="display:inline;fill:#666666;fill-opacity:0.75;stroke:none;stroke-width:2.63119;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="rect28-0-1-3-2-2-0-1"
@@ -2229,14 +2186,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:11.2889px;line-height:1.25;font-family:Roboto;-inkscape-font-specification:'Roboto Medium';letter-spacing:0px;display:inline;fill:#333333;fill-opacity:1;stroke-width:0.264583"
-       x="-201.67041"
+       x="-244.12781"
        y="69.605499"
        id="text909-7-38-37"><tspan
          sodipodi:role="line"
          id="tspan907-5-2-5"
-         x="-201.67041"
+         x="-244.12781"
          y="69.605499"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.2889px;font-family:Roboto;-inkscape-font-specification:Roboto;fill:#333333;fill-opacity:1;stroke-width:0.264583">Not Connected</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:11.2889px;font-family:Roboto;-inkscape-font-specification:Roboto;fill:#333333;fill-opacity:1;stroke-width:0.264583">Not Connected - Tap to Connect</tspan></text>
     <rect
        style="display:inline;fill:#ff6666;fill-opacity:1;stroke:none;stroke-width:0.197209;stroke-opacity:1"
        id="rect44-47-4-3"
