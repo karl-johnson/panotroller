@@ -1,5 +1,6 @@
 package com.example.panotroller;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -7,6 +8,7 @@ import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -23,7 +25,6 @@ public class BluetoothBar extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
-
     public BluetoothBar() {
         // Required empty public constructor
     }
@@ -49,10 +50,12 @@ public class BluetoothBar extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
     }
 
     @Override
@@ -61,4 +64,17 @@ public class BluetoothBar extends Fragment {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_bluetooth_bar, container, false);
     }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        view.findViewById(R.id.bar_frame).setOnClickListener(this::onBluetoothPress);
+    }
+
+    public void onBluetoothPress(View view) {
+        Intent intent = new Intent(BluetoothBar.this.getActivity(), BluetoothConfig.class);
+        startActivity(intent);
+        // no need to pass any bluetooth data, as it's all handled by Bluetooth Service
+    }
 }
+
