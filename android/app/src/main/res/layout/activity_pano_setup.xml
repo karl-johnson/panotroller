@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/grey_bkd"
+    tools:context=".PanoSetup">
+
+    <io.github.controlwear.virtual.joystick.android.JoystickView
+        android:id="@+id/joystick"
+        android:layout_width="330dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginBottom="32dp"
+        app:JV_backgroundColor="@color/light_grey"
+        app:JV_buttonColor="@color/green_accent"
+        app:JV_enabled="true"
+        app:JV_fixedCenter="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <fragment
+        android:id="@+id/fragment2"
+        android:name="com.example.panotroller.BluetoothBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout="@layout/fragment_bluetooth_bar" />
+
+    <ImageButton
+        android:id="@+id/pano_settings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:background="@drawable/round_button"
+        android:contentDescription="Panorama Setttings"
+        android:padding="4dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/pano_info"
+        app:srcCompat="@drawable/ic_baseline_settings" />
+
+    <ImageButton
+        android:id="@+id/pano_info"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/round_button"
+        android:contentDescription="Panorama Info"
+        android:padding="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/joystick"
+        app:srcCompat="@drawable/ic_baseline_info" />
+
+    <ImageButton
+        android:id="@+id/add_point"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/round_button"
+        android:contentDescription="Panorama Info"
+        android:padding="4dp"
+        app:layout_constraintStart_toStartOf="@+id/pano_settings"
+        app:layout_constraintTop_toTopOf="@+id/remove_point"
+        app:srcCompat="@drawable/ic_outline_add" />
+
+    <ImageButton
+        android:id="@+id/remove_point"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:background="@drawable/round_button"
+        android:contentDescription="Panorama Info"
+        android:padding="4dp"
+        app:layout_constraintBottom_toBottomOf="@+id/joystick"
+        app:layout_constraintEnd_toEndOf="@+id/pano_info"
+        app:srcCompat="@drawable/ic_baseline_remove" />
+
+    <TextView
+        android:id="@+id/photos_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Photos"
+        android:textColor="@color/green_accent"
+        app:layout_constraintStart_toStartOf="@+id/pano_viewer"
+        app:layout_constraintTop_toBottomOf="@+id/fragment2" />
+
+    <TextView
+        android:id="@+id/time_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Time"
+        android:textColor="@color/green_accent"
+        app:layout_constraintBottom_toTopOf="@+id/pano_viewer"
+        app:layout_constraintEnd_toEndOf="@+id/pano_viewer" />
+
+    <TextView
+        android:id="@+id/resolution_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Resolution"
+        android:textColor="@color/green_accent"
+        app:layout_constraintBottom_toTopOf="@+id/joystick"
+        app:layout_constraintEnd_toEndOf="@+id/pano_viewer"
+        app:layout_constraintStart_toStartOf="@+id/pano_viewer" />
+
+    <View
+        android:id="@+id/pano_viewer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@color/light_grey"
+        app:layout_constraintBottom_toTopOf="@+id/resolution_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/photos_text" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
