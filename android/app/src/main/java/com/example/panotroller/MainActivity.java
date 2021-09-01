@@ -1,6 +1,7 @@
 package com.example.panotroller;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,13 +12,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
         // configure action bar
-        setTitle("Panotroller");
+        Toolbar thisToolbar = (Toolbar) findViewById(R.id.main_toolbar);
+        setSupportActionBar(thisToolbar);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         getSupportActionBar().setLogo(R.drawable.actionbar);
         getSupportActionBar().setDisplayUseLogoEnabled(true);
-        setContentView(R.layout.activity_main);
+
 
         // define button actions
         findViewById(R.id.panoramaModeButton).setOnClickListener(this::launchPanoSetup);

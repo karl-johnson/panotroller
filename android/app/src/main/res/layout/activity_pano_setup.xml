@@ -7,28 +7,41 @@
     android:background="@color/grey_bkd"
     tools:context=".PanoSetup">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/pano_setup_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="?attr/actionBarTheme"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/pano_setup_menu" />
+
     <io.github.controlwear.virtual.joystick.android.JoystickView
         android:id="@+id/joystick"
-        android:layout_width="330dp"
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal|top"
-        android:layout_marginBottom="32dp"
+        android:maxWidth="300dp"
         app:JV_backgroundColor="@color/light_grey"
         app:JV_buttonColor="@color/green_accent"
         app:JV_enabled="true"
-        app:JV_fixedCenter="false"
+        app:JV_fixedCenter="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/resolution_text" />
 
     <fragment
-        android:id="@+id/fragment2"
+        android:id="@+id/pano_setup_bt_fragment"
         android:name="com.example.panotroller.BluetoothBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pano_setup_toolbar"
         tools:layout="@layout/fragment_bluetooth_bar" />
 
     <ImageButton
@@ -83,11 +96,11 @@
         android:id="@+id/photos_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:text="Photos"
         android:textColor="@color/green_accent"
-        app:layout_constraintStart_toStartOf="@+id/pano_viewer"
-        app:layout_constraintTop_toBottomOf="@+id/fragment2" />
+        app:layout_constraintStart_toStartOf="@+id/pano_setup_viewer"
+        app:layout_constraintTop_toBottomOf="@+id/pano_setup_bt_fragment" />
 
     <TextView
         android:id="@+id/time_text"
@@ -95,8 +108,8 @@
         android:layout_height="wrap_content"
         android:text="Time"
         android:textColor="@color/green_accent"
-        app:layout_constraintBottom_toTopOf="@+id/pano_viewer"
-        app:layout_constraintEnd_toEndOf="@+id/pano_viewer" />
+        app:layout_constraintBottom_toTopOf="@+id/pano_setup_viewer"
+        app:layout_constraintEnd_toEndOf="@+id/pano_setup_viewer" />
 
     <TextView
         android:id="@+id/resolution_text"
@@ -105,17 +118,18 @@
         android:layout_marginBottom="16dp"
         android:text="Resolution"
         android:textColor="@color/green_accent"
-        app:layout_constraintBottom_toTopOf="@+id/joystick"
-        app:layout_constraintEnd_toEndOf="@+id/pano_viewer"
-        app:layout_constraintStart_toStartOf="@+id/pano_viewer" />
+        app:layout_constraintBottom_toTopOf="@+id/pano_settings"
+        app:layout_constraintEnd_toEndOf="@+id/pano_setup_viewer"
+        app:layout_constraintStart_toStartOf="@+id/pano_setup_viewer" />
 
     <View
-        android:id="@+id/pano_viewer"
+        android:id="@+id/pano_setup_viewer"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:background="@color/light_grey"
+        android:minHeight="96dp"
         app:layout_constraintBottom_toTopOf="@+id/resolution_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

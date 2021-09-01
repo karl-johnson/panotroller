@@ -1,6 +1,7 @@
 package com.example.panotroller;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.NavUtils;
 
 import android.content.Context;
@@ -33,6 +34,8 @@ public class BluetoothConfig extends AppCompatActivity {
         setContentView(R.layout.activity_bluetooth_config);
         // configure action bar
         setTitle("Bluetooth Config");
+        Toolbar thisToolbar = (Toolbar) findViewById(R.id.bt_setup_toolbar);
+        setSupportActionBar(thisToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // add back button to action bar
 
         // configure bluetooth device list
@@ -93,7 +96,7 @@ public class BluetoothConfig extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // make back button actually go back
         if (item.getItemId() == android.R.id.home) {
-            NavUtils.navigateUpFromSameTask(this);
+            onBackPressed(); // redundant functionality as back button
             return true;
         }
         return super.onOptionsItemSelected(item);

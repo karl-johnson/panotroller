@@ -1,70 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/relativeLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/grey_bkd"
     tools:context=".MainActivity">
 
-    <LinearLayout
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/bt_setup_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginStart="0dp"
-        android:layout_marginLeft="0dp"
-        android:layout_marginTop="0dp"
-        android:layout_marginEnd="0dp"
-        android:layout_marginRight="0dp"
-        android:layout_marginBottom="0dp"
-        android:orientation="vertical"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="?attr/actionBarTheme"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/bluetoothStatus"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="Bluetooth Status"
+        android:textColor="@color/red_disconnected"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bt_setup_toolbar" />
+
+    <Button
+        android:id="@+id/discover"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:text="Discover New Devices"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bluetoothStatus" />
+
+    <Button
+        android:id="@+id/disconnect"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@color/light_grey"
+        android:text="Disconnect"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/discover" />
+
+    <ListView
+        android:id="@+id/devicesListView"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:choiceMode="singleChoice"
+        android:divider="@color/light_grey"
+        android:dividerHeight="1dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0">
+        app:layout_constraintTop_toBottomOf="@+id/disconnect">
 
-        <TextView
-            android:id="@+id/bluetoothStatus"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_weight="0"
-            android:background="@color/red_disconnected"
-            android:ellipsize="end"
-            android:gravity="center"
-            android:maxLines="1"
-            android:text="Bluetooth Status"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+    </ListView>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:padding="16dp">
 
-            <Button
-                android:id="@+id/disconnect"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/light_grey"
-                android:text="Disconnect" />
-
-            <Button
-                android:id="@+id/discover"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Discover New Devices" />
-
-            <ListView
-                android:id="@+id/devicesListView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:choiceMode="singleChoice"
-                android:divider="@color/light_grey"
-                android:dividerHeight="1dp"/>
-        </LinearLayout>
-
-    </LinearLayout>
-
-</RelativeLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

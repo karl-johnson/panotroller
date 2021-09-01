@@ -8,7 +8,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Panotroller">
-        <activity android:name=".PanoSetup"></activity>
+        <activity android:name=".PanoAcquisition"></activity>
+        <activity android:name=".PanoSetup">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.example.panotroller.MainActivity" />
+        </activity>
         <activity android:name=".BluetoothConfig">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

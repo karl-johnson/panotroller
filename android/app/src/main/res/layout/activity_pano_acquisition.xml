@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/grey_bkd"
+    tools:context=".PanoAcquisition">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/pano_acq_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="?attr/actionBarTheme"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <fragment
+        android:id="@+id/pano_acq_bt_fragment"
+        android:name="com.example.panotroller.BluetoothBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/pano_acq_toolbar"
+        tools:layout="@layout/fragment_bluetooth_bar" />
+
+    <TextView
+        android:id="@+id/pano_acq_photos_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Photos"
+        android:textColor="@color/green_accent"
+        app:layout_constraintStart_toStartOf="@+id/pano_acq_viewer"
+        app:layout_constraintTop_toBottomOf="@+id/pano_acq_bt_fragment" />
+
+    <TextView
+        android:id="@+id/pano_acq_time_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Time"
+        android:textColor="@color/green_accent"
+        app:layout_constraintBottom_toTopOf="@+id/pano_acq_viewer"
+        app:layout_constraintEnd_toEndOf="@+id/pano_acq_viewer" />
+
+    <View
+        android:id="@+id/pano_acq_viewer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@color/light_grey"
+        app:layout_constraintBottom_toTopOf="@+id/pano_acq_progressbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/pano_acq_photos_text" />
+
+    <View
+        android:id="@+id/pano_acq_progressbar"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@color/light_grey"
+        app:layout_constraintBottom_toTopOf="@+id/pano_acq_remaining_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/pano_acq_remaining_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="64dp"
+        android:text="Remaining"
+        android:textColor="@color/green_accent"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/pano_acq_progressbar_text"
+        android:layout_width="90dp"
+        android:layout_height="0dp"
+        android:background="@color/green_accent"
+        android:gravity="center"
+        android:text="Progress"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/pano_acq_remaining_text"
+        app:layout_constraintStart_toStartOf="@+id/pano_acq_progressbar"
+        app:layout_constraintTop_toTopOf="@+id/pano_acq_progressbar" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="64dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageButton
+            android:id="@+id/pano_acq_skip_first"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_button"
+            android:contentDescription="Pause Panorama Acquisition"
+            android:padding="4dp"
+            app:srcCompat="@drawable/ic_baseline_skip_previous" />
+
+        <ImageButton
+            android:id="@+id/pano_acq_skip_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_button"
+            android:contentDescription="Pause Panorama Acquisition"
+            android:padding="4dp"
+            app:srcCompat="@drawable/ic_baseline_fast_rewind" />
+
+        <ImageButton
+            android:id="@+id/pause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_button"
+            android:contentDescription="Pause Panorama Acquisition"
+            android:padding="4dp"
+            app:srcCompat="@drawable/ic_baseline_pause" />
+
+        <ImageButton
+            android:id="@+id/pano_acq_skip_forward"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_button"
+            android:contentDescription="Pause Panorama Acquisition"
+            android:padding="4dp"
+            app:srcCompat="@drawable/ic_baseline_fast_forward" />
+
+        <ImageButton
+            android:id="@+id/pano_ack_skip_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/round_button"
+            android:contentDescription="Pause Panorama Acquisition"
+            android:padding="4dp"
+            app:srcCompat="@drawable/ic_baseline_skip_next" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
