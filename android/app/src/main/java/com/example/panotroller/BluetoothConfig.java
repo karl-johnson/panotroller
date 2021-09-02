@@ -4,14 +4,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.NavUtils;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
@@ -22,75 +27,85 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class BluetoothConfig extends AppCompatActivity {
 
+    /* CONSTANTS */
+    // request code used to identify that the bluetooth on/off activity was launched
+    private final static int REQUEST_ENABLE_BT = 1;
+
+    /* DECLARE UI OBJECTS */
+    private TextView mBluetoothStatusText;
+    //private Button mDiscoverButton;
+    private Button mDisconnectButton;
     private ListView mDevicesListView;
+
+    /* OTHER OBJECTS */
+    Set<BluetoothDevice> mPairedDevices; // set to keep track of all paired devices
+    List<String> mPairedDeviceNames = new ArrayList<String>();
+
+    // object which lets us do most Bluetooth-related tasks
+    BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // apply layout
         setContentView(R.layout.activity_bluetooth_config);
-        // configure action bar
+
+        /* ASSIGN UI OBJECTS */
+        mBluetoothStatusText = (TextView) findViewById(R.id.bluetoothStatus);
+        //mDiscoverButton = (Button) findViewById(R.id.discover);
+        mDisconnectButton = (Button) findViewById(R.id.disconnect);
+        mDevicesListView = (ListView)findViewById(R.id.devicesListView);
+
+        /* CONFIGURE ACTION BAR */
         setTitle("Bluetooth Config");
         Toolbar thisToolbar = (Toolbar) findViewById(R.id.bt_setup_toolbar);
         setSupportActionBar(thisToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // add back button to action bar
-
-        // configure bluetooth device list
-        // variable for us to refer to the list view in the future
-        mDevicesListView = (ListView)findViewById(R.id.devicesListView);
-        // adapter which handles how to put string data into list items (including formatting!)
-        // PLACEHOLDER ITEMS
-        List<String> deviceList = new ArrayList<String>();
-        for( int i = 1; i <= 10; i++ )
-            deviceList.add(String.format( "Device %d", i ));
-        // \PLACEHOLDER ITEMS
-
-        DeviceListAdapter mAdapter = new DeviceListAdapter(this, deviceList);
-        mDevicesListView.setAdapter(new ArrayAdapter<String>(
-                this, R.layout.device_item, R.id.name, deviceList)); // assign adapter to our list view
-        // listener to determine what should be done when an item is clicked on
-        // mDevicesListView.setOnItemClickListener(mDeviceClickListener);
     }
 
-    /*
-        DEVICE LIST RENDERING
-     */
-    public class DeviceListAdapter extends BaseAdapter {
-        private final Context context;
-        private final List<String> items;
-        public DeviceListAdapter(Context context, List<String> items ) {
-            this.context = context;
-            this.items = items;
+    @Override
+    protected void onResume() {
+        // this is the last thing called before the activity is active
+
+        /* FUNDAMENTAL BLUETOOTH TASKS */
+        // turn on bluetooth if the user has it turned off
+        super.onResume();
+        mBluetoothStatusText.setText("");
+        if(!mBTAdapter.isEnabled()) {
+            // if it is off, launch built-in activity to turn on bluetooth
+            // onResume is called upon returning from ACTION_REQUEST_ENABLE so this will keep
+            // appearing until bluetooth is enabled!
+            mBluetoothStatusText.setText("Bluetooth Disabled");
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+            // this is non-blocking!
         }
-        @Override
-        public int getCount() {
-            return items.size();
-        }
-        @Override
-        public Object getItem( int position ) {
-            return items.get( position );
-        }
-        @Override
-        public long getItemId( int position ) {
-            return getItem( position ).hashCode();
-        }
-        // actual meat of the adapter - how to set formatting based on the position we're given
-        public View getView(int position, View convertView, ViewGroup parent) {
-            // optimization thing involves recycling an old item convertView if we're given it
-            View v = convertView;
-            if ( v == null ) { // if we aren't given a convertView to recycle, inflate a new one
-                LayoutInflater inflater = (LayoutInflater) context
-                        .getSystemService( Context.LAYOUT_INFLATER_SERVICE );
-                v = inflater.inflate( R.layout.device_item, parent, false );
+        if(mBTAdapter.isEnabled()) {// things to do once BT adapter is enabled
+            // set proper text
+            mBluetoothStatusText.setText("Bluetooth Enabled");
+            // assign list of paired devices
+            mPairedDevices = mBTAdapter.getBondedDevices();
+            // iterate through these to get simple List of device names
+            for(BluetoothDevice device : mPairedDevices)
+                mPairedDeviceNames.add(device.getName());
+            if(mPairedDevices.size() == 0) {
+                // no paired devices, oh no!
+                mPairedDeviceNames.add("No paired devices!");
             }
-            final String item = (String) getItem( position );
-            ((TextView) v.findViewById(R.id.name)).setText(item);
-            return v;
+            // use a simple ArrayAdapter with this list to populate our listView with device names
+            mDevicesListView.setAdapter(new ArrayAdapter<String>(
+                    this, R.layout.device_item, R.id.name, mPairedDeviceNames));
+            //Log.i("BT_DEVICE_LIST", "mPairedDevices size: " + mPairedDeviceNames.size());
         }
+        // if we are not currently connected to a device, disable "disconnect" button
+
     }
+
+    /* TOOLBAR BUTTON BEHAVIOR */
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -101,4 +116,26 @@ public class BluetoothConfig extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+    /* WHAT DO WHEN RETURNING FROM OTHER ACTIVITIES */
+    /* unnecessary due to how we set up onResume
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent Data) {
+        super.onActivityResult(requestCode, resultCode, Data);
+        // Determine what activity just returned using requestCode we used to launch it
+        if (requestCode == REQUEST_ENABLE_BT) {
+            // We are returning from the built-in "turn on bluetooth?" activity
+            if (resultCode == RESULT_OK) {
+                // The user selected "ok" so bluetooth should now be enabled
+                mBluetoothStatusText.setText("Bluetooth Enabled");
+                // DO ANYTHING HERE IF YOU NEED TO IN THE FUTURE
+            }
+            else {
+                // User did not select 'ok' so bluetooth should still be off.
+                mBluetoothStatusText.setText("Bluetooth Disabled");
+                // DO ANYTHING HERE IF YOU NEED TO IN THE FUTURE
+            }
+        }
+    }*/
+
 }
