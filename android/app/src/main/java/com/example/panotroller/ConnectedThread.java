@@ -13,10 +13,10 @@ public class ConnectedThread extends Thread {
     // thread to send and receive data over Bluetooth
 
     /* MEMBERS */
-    private final BluetoothSocket mmSocket; // connection point for device we're connected to
-    private final Handler mmHandler; // how to get information out of this thread
-    private final InputStream mmInStream; // incoming data stream from BT device
-    private final OutputStream mmOutStream; // outgoing data stream to BT device
+    private final BluetoothSocket mSocket; // connection point for device we're connected to
+    private final Handler mHandler; // how to get information out of this thread
+    private final InputStream mInStream; // incoming data stream from BT device
+    private final OutputStream mOutStream; // outgoing data stream to BT device
 
     private boolean messageInProgress = false; // keep track of whether message is in progress
     private int byteIndex = 0; // keep track of location in message
@@ -24,8 +24,8 @@ public class ConnectedThread extends Thread {
 
     /* CONSTRUCTOR */
     public ConnectedThread(BluetoothSocket socket, Handler mHandlerIn) {
-        mmSocket = socket;
-        mmHandler = mHandlerIn;
+        mSocket = socket;
+        mHandler = mHandlerIn;
         InputStream tmpIn = null;
         OutputStream tmpOut = null;
 
@@ -35,8 +35,8 @@ public class ConnectedThread extends Thread {
             tmpOut = socket.getOutputStream();
         } catch (IOException e) { }
 
-        mmInStream = tmpIn;
-        mmOutStream = tmpOut;
+        mInStream = tmpIn;
+        mOutStream = tmpOut;
     }
 
     public void run() {
@@ -44,9 +44,9 @@ public class ConnectedThread extends Thread {
             // constantly look for new bytes from our InputStream
             try {
                 // look for start character, start array once seen, end array once right length
-                while(mmInStream.available() > 0) {
+                while(mInStream.available() > 0) {
                     //Log.d("BYTE","byte from Arduino");
-                    byte inByte = (byte) mmInStream.read();
+                    byte inByte = (byte) mInStream.read();
                     if(messageInProgress) {
                         saveArray[byteIndex] = inByte; // add byte to array
                         byteIndex++;
@@ -56,10 +56,10 @@ public class ConnectedThread extends Thread {
                             // and send ArduinoInstruction object via handler
                             try {
                                 ArduinoInstruction newInstruction = new ArduinoInstruction(saveArray);
-                                mmHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
+                                mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
                                 Log.d("SENT","Sent instruction handler");
                             } catch (ArduinoInstruction.CorruptedInstructionException e) {
-                                mmHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_CORRUPTED).sendToTarget();
+                                mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_CORRUPTED).sendToTarget();
                             } catch (IOException e2) {
                                 Log.e("BAD_ENC_MESSAGE_LENGTH",e2.getMessage());
                             }
@@ -85,7 +85,7 @@ public class ConnectedThread extends Thread {
         byte[] sendBytes = inputInstruction.convertInstructionToBytes();
         Log.d("BYTES_SENT","0x"+bytesToHex(sendBytes));
         try {
-            mmOutStream.write(sendBytes);
+            mOutStream.write(sendBytes);
         } catch (IOException e) {
             Log.e("WRITE_INSTR_FAILED", "Attempt to write instruction bytes failed");
         }
@@ -106,7 +106,7 @@ public class ConnectedThread extends Thread {
     /* Call this from the main activity to shutdown the connection */
     public void cancel() {
         try {
-            mmSocket.close();
+            mSocket.close();
         } catch (IOException e) { }
     }
 }

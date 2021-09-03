@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -17,6 +16,8 @@ import java.util.UUID;
 public class BluetoothService extends Service {
     // service to enable continuous bluetooth communication regardless of what activity is open
     // might eventually allow control of connection through notif without active activity
+    // the service is started in MainActivity in onStart()
+    // this means startService can be called multiple times, but it's only created on the first call
 
     /* CONSTANT MEMBERS */
 
@@ -25,7 +26,7 @@ public class BluetoothService extends Service {
     public final static int STATUS_HALF_CONNECTED = 1;
     public final static int STATUS_CONNECTED = 2;
 
-    // constants for mmHandler
+    // constants for mHandler
     public final static int CONN_STATUS_UPDATED = 0;
     public final static int NEW_INSTRUCTION_IN = 1;
     public final static int NEW_INSTRUCTION_CORRUPTED = 2;
@@ -44,7 +45,7 @@ public class BluetoothService extends Service {
      ConnectedThread to the Activity. The Handler is not only how information is sent, but also
      determines what is done with that information the the main Activity
      */
-    private Handler mmHandler;
+    private Handler mHandler;
     // the binder has to do with how this Service is "bound" to each Activity which uses it
     private final IBinder binder = new LocalBinder();
     // simple variable to track whether we're connected
@@ -56,7 +57,7 @@ public class BluetoothService extends Service {
     }
 
     public void setHandler(Handler handlerIn) {
-        mmHandler = handlerIn;
+        mHandler = handlerIn;
     }
 
     public BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
@@ -70,10 +71,10 @@ public class BluetoothService extends Service {
         // get BT thread if exists, create if not
         if(internalBTSocket != null) {
             if (internalConnectedThread == null) {
-                if (mmHandler == null) {
+                if (mHandler == null) {
                     Log.e("NO_HANDLER_PASSED","No handler provided to BT service.");
                 }
-                internalConnectedThread = new ConnectedThread(internalBTSocket, mmHandler);
+                internalConnectedThread = new ConnectedThread(internalBTSocket, mHandler);
                 internalConnectedThread.start();
                 Log.d("GET_BT_THREAD", "Created BT Thread: " + String.valueOf(internalConnectedThread != null));
                 Log.d("BT_THREAD_ALIVE",String.valueOf(internalConnectedThread.isAlive()));
@@ -84,6 +85,7 @@ public class BluetoothService extends Service {
         }
         return internalConnectedThread;
     }
+    public ConnectedThread getBluetoothThread() {return internalConnectedThread; }
     public void sendInstructionViaThread(ArduinoInstruction instructionIn) {
         if (internalConnectedThread != null) {
             internalConnectedThread.writeArduinoInstruction(instructionIn);
