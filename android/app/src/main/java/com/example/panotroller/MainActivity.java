@@ -65,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
             Log.d("SERVICE_CONNECTED","BT Service Connected");
-            Log.d("BIND_TEST","bind fin, mbtservice != null: "+String.valueOf(mBluetoothService != null));
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {

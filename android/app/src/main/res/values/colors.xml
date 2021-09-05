@@ -5,6 +5,7 @@
     <color name="lighter_grey">#FF999999</color>
     <color name="red_disconnected">#FFFF6666</color>
     <color name="orange_connecting">#FFffb266</color>
+    <color name="green_connected">#FF95FF95</color>
     <color name="green_accent">#FF95FF95</color>
     <color name="green_accent_var">#FF659F65</color>
     <color name="purple_200">#FFBB86FC</color>

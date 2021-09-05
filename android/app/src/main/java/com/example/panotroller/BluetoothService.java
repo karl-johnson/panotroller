@@ -11,6 +11,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.UUID;
 
 public class BluetoothService extends Service {
@@ -22,9 +23,10 @@ public class BluetoothService extends Service {
     /* CONSTANT MEMBERS */
 
     // constants for connectionStatus
-    public final static int STATUS_DISCONNECTED = 0;
-    public final static int STATUS_HALF_CONNECTED = 1;
-    public final static int STATUS_CONNECTED = 2;
+    public final static int STATUS_OFF = 0; // BT is off
+    public final static int STATUS_DISCONNECTED = 1; // BT is on but disconnected
+    public final static int STATUS_CONNECTING = 2; // Currently starting/verifying connection
+    public final static int STATUS_CONNECTED = 3; // Connection is active and good
 
     // constants for mHandler
     public final static int CONN_STATUS_UPDATED = 0;
@@ -32,7 +34,9 @@ public class BluetoothService extends Service {
     public final static int NEW_INSTRUCTION_CORRUPTED = 2;
 
     // UUID randomly generated on 2021-09-01
-    private static final UUID BTMODULEUUID = UUID.fromString("967dbd75-51b3-422d-a9af-4430bec19f57");
+    //private static final UUID BTMODULEUUID = UUID.fromString("967dbd75-51b3-422d-a9af-4430bec19f57");
+    // I can't connect to a device unless I use this UUID, what the fuck? TODO: ...
+    private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     /* OTHER IMPORTANT MEMBERS */
 
@@ -48,8 +52,25 @@ public class BluetoothService extends Service {
     private Handler mHandler;
     // the binder has to do with how this Service is "bound" to each Activity which uses it
     private final IBinder binder = new LocalBinder();
+
     // simple variable to track whether we're connected
-    public int connectionStatus = STATUS_DISCONNECTED;
+    private int connectionStatus = STATUS_DISCONNECTED;
+    public void setConnectionStatus(int newStatus) {
+        // unfortunately we generally rely on outside code to update the connection status
+        // inefficient but readable check to see if this is a valid status
+        if(Arrays.asList(STATUS_OFF,STATUS_DISCONNECTED,STATUS_CONNECTING,STATUS_CONNECTED)
+                .contains(newStatus)) {
+            connectionStatus = newStatus;
+        }
+        else {
+            Log.e("BAD_BT_STATUS", "setConnectionStatus() passed invalid newStatus");
+        }
+    }
+
+    public int getConnectionStatus() {return connectionStatus;}
+
+    // who are WE (this app) connected to, if we are?
+    public BluetoothDevice connectedDevice = null; // track the single device
 
     @Override
     public void onCreate() {
@@ -97,6 +118,11 @@ public class BluetoothService extends Service {
             Log.e("SEND_W_NO_THREAD","Tried to send with no thread!");
         }
     }
+
+    public void disconnect() {
+
+    }
+
     public class LocalBinder extends Binder {
         BluetoothService getService() {
             return BluetoothService.this;

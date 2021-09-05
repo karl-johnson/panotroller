@@ -13,10 +13,10 @@ public class ConnectedThread extends Thread {
     // thread to send and receive data over Bluetooth
 
     /* MEMBERS */
-    private final BluetoothSocket mSocket; // connection point for device we're connected to
+    private BluetoothSocket mSocket; // connection point for device we're connected to
     private final Handler mHandler; // how to get information out of this thread
-    private final InputStream mInStream; // incoming data stream from BT device
-    private final OutputStream mOutStream; // outgoing data stream to BT device
+    private InputStream mInStream; // incoming data stream from BT device
+    private OutputStream mOutStream; // outgoing data stream to BT device
 
     private boolean messageInProgress = false; // keep track of whether message is in progress
     private int byteIndex = 0; // keep track of location in message
@@ -103,11 +103,27 @@ public class ConnectedThread extends Thread {
         return new String(hexChars);
     }
 
-    /* Call this from the main activity to shutdown the connection */
-    public void cancel() {
-        try {
-            mSocket.close();
-        } catch (IOException e) { }
+    /* Call this to shutdown the connection */
+
+    public void disconnect() {
+        if (mInStream != null) {
+            try {mInStream.close();} catch (Exception e) {
+                Log.e("BT_CONNECTION", "Exception thrown while closing InStream");
+            }
+            mInStream = null;
+        }
+        if (mOutStream != null) {
+            try {mOutStream.close();} catch (Exception e) {
+                Log.d("BT_CONNECTION", "Exception thrown while closing OutStream");
+            }
+            mOutStream = null;
+        }
+        if (mSocket != null) {
+            try {mSocket.close();} catch (Exception e) {
+                Log.d("BT_CONNECTION", "Exception thrown while closing Socket");
+            }
+            mSocket = null;
+        }
     }
 }
 

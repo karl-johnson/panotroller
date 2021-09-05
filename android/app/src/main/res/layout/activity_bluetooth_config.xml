@@ -50,6 +50,7 @@
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:gravity="center"
         android:text="Paired Devices:"
         android:textColor="@color/green_accent"
