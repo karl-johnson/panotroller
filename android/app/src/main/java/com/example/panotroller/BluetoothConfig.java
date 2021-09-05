@@ -53,7 +53,7 @@ public class BluetoothConfig extends AppCompatActivity {
 
     private BluetoothService mBluetoothService; //
     private BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
-    private Handler mHandler; // Handler to deal with information coming back over BT connection
+    private Handler mHandler = new BluetoothConfigHandler(); // Handler to deal with information coming back over BT connection
     private boolean mShouldUnbind = false; // Tracks whether unbinding is necessary on act. exit
 
     /* OTHER MEMBERS */
@@ -87,6 +87,11 @@ public class BluetoothConfig extends AppCompatActivity {
         getApplicationContext().bindService(
                 BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
         mShouldUnbind = true;
+        if(mBluetoothService != null) {
+            Log.d("BT_SERVICE_EXISTS", "BT Service exists");
+            Toast.makeText(getApplicationContext(),
+                    "Bluetooth Service Exists", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -172,23 +177,23 @@ public class BluetoothConfig extends AppCompatActivity {
             new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
             // iterate through set until we reach the id we clicked
-            BluetoothDevice clickedDevice = null;
+            BluetoothDevice nonFinalDevice = null;
             int index = 0;
             for(BluetoothDevice device : mPairedDevices) {
                 if(index == id) {
-                    clickedDevice = device;
+                    nonFinalDevice = device;
+                    break;
                 }
                 index++;
             }
-            final String clickedDeviceName = clickedDevice.getName();
-            final String clickedDeviceAddress = clickedDevice.getAddress();
+            final BluetoothDevice clickedDevice = nonFinalDevice;
             if(clickedDevice == null) {
                 // there was an issue and we didn't find the clicked device??
                 Toast.makeText(getBaseContext(),
                         "Couldn't find clicked device!", Toast.LENGTH_SHORT).show();
             }
             // Update GUI to say we're connecting
-            mBluetoothStatusText.setText("Connecting to " + clickedDeviceName);
+            mBluetoothStatusText.setText("Connecting to " + clickedDevice.getName());
             mBluetoothStatusText.setTextColor(
                     getApplicationContext().getColor(R.color.orange_connecting));
 
@@ -196,9 +201,8 @@ public class BluetoothConfig extends AppCompatActivity {
             new Thread() {
                 public void run() {
                     boolean fail = false;
-                    BluetoothDevice device = mBTAdapter.getRemoteDevice(clickedDeviceAddress);
                     try {
-                        mBluetoothService.createBluetoothSocket(device);
+                        mBluetoothService.createBluetoothSocket(clickedDevice);
                     } catch (IOException e) {
                         fail = true;
                         Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
@@ -236,7 +240,7 @@ public class BluetoothConfig extends AppCompatActivity {
                         }
                         mHandler.obtainMessage(
                                 BluetoothService.CONN_STATUS_UPDATED,
-                                1, -1, clickedDeviceName).sendToTarget();
+                                1, -1, clickedDevice.getName()).sendToTarget();
                     }
                 }
             }.start();
@@ -249,7 +253,18 @@ public class BluetoothConfig extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch(msg.what) {
                 case BluetoothService.CONN_STATUS_UPDATED:
-                    // TODO
+                    switch(msg.arg1) {
+                        case BluetoothService.STATUS_DISCONNECTED:
+                            mBluetoothStatusText.setText("Disconnected");
+                            mBluetoothStatusText.setTextColor(
+                                    getApplicationContext().getColor(R.color.red_disconnected));
+                            break;
+                        case BluetoothService.STATUS_CONNECTED:
+                            mBluetoothStatusText.setText("Connected to " + msg.obj);
+                            mBluetoothStatusText.setTextColor(
+                                    getApplicationContext().getColor(R.color.green_accent));
+                            break;
+                    }
                     break;
                 case BluetoothService.NEW_INSTRUCTION_IN:
                     // TODO

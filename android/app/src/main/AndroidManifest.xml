@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.panotroller">
-
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <application
         android:allowBackup="true"
@@ -27,6 +26,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".BluetoothService">
+            <intent-filter>
+                <action android:name=".QuickService .BIND" />
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

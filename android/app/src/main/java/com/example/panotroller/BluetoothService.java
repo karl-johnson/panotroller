@@ -61,8 +61,11 @@ public class BluetoothService extends Service {
     }
 
     public BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
-        internalBTSocket = device.createRfcommSocketToServiceRecord(BTMODULEUUID);
-        return internalBTSocket;
+        if(device != null) {
+            internalBTSocket = device.createRfcommSocketToServiceRecord(BTMODULEUUID);
+            return internalBTSocket;
+        }
+        else throw new IOException("Null device passed into createBluetoothSocket");
         // creates secure outgoing connection with BT device using UUID
     }
 
