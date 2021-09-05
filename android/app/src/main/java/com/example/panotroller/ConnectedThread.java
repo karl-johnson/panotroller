@@ -114,13 +114,13 @@ public class ConnectedThread extends Thread {
         }
         if (mOutStream != null) {
             try {mOutStream.close();} catch (Exception e) {
-                Log.d("BT_CONNECTION", "Exception thrown while closing OutStream");
+                Log.e("BT_CONNECTION", "Exception thrown while closing OutStream");
             }
             mOutStream = null;
         }
         if (mSocket != null) {
             try {mSocket.close();} catch (Exception e) {
-                Log.d("BT_CONNECTION", "Exception thrown while closing Socket");
+                Log.e("BT_CONNECTION", "Exception thrown while closing Socket");
             }
             mSocket = null;
         }

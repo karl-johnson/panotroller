@@ -4,29 +4,44 @@ package com.example.panotroller;
 // ** BEGIN CONSTANT DEFINITIONS **
 public class GeneratedConstants {
 	// ** BEGIN INSTRUCTION DEFINITIONS **
-	// Instruction pair: conn_conf
-	public final static byte INST_CONN_REQ = (byte) 0b11000000;
-	public final static byte INST_CONN_CONF = (byte) 0b01000000;
-	// Instruction pair: led_color
-	public final static byte INST_SET_LED = (byte) 0b10001000;
-	public final static byte INST_CNF_LED = (byte) 0b00001000;
-	// Instruction pair: motor_speed
-	public final static byte INST_SET_MTR = (byte) 0b10001010;
-	public final static byte INST_CNF_MTR = (byte) 0b00001010;
-	// Instruction pair: ping_float
-	public final static byte INST_PING_FLO = (byte) 0b10000001;
-	public final static byte INST_PONG_FLO = (byte) 0b00000001;
 	// Instruction pair: ping_int
 	public final static byte INST_PING_INT = (byte) 0b10000010;
 	public final static byte INST_PONG_INT = (byte) 0b00000010;
+	// Instruction pair: error
+	public final static byte INST_AN_ERROR = (byte) 0b10000100;
+	public final static byte INST_AR_ERROR = (byte) 0b00000100;
+	// Instruction pair: led_color
+	public final static byte INST_SET_LED = (byte) 0b10000110;
+	public final static byte INST_CNF_LED = (byte) 0b00000110;
+	// Instruction pair: motor_speed
+	public final static byte INST_SET_MTR = (byte) 0b10001000;
+	public final static byte INST_CNF_MTR = (byte) 0b00001000;
+	// Instruction pair: position
+	public final static byte INST_GET_POS = (byte) 0b10001010;
+	public final static byte INST_GOT_POS = (byte) 0b00001010;
+	// Instruction pair: home
+	public final static byte INST_HOME_POS = (byte) 0b10001100;
+	public final static byte INST_HOMD_POS = (byte) 0b00001100;
+	// Instruction pair: move
+	public final static byte INST_MOVE_ABS = (byte) 0b10001110;
+	public final static byte INST_MOVD_ABD = (byte) 0b00001110;
+	// Instruction pair: ustep
+	public final static byte INST_SET_USTEP = (byte) 0b10010000;
+	public final static byte INST_CNF_USTEP = (byte) 0b00010000;
+	// Instruction pair: ping_float
+	public final static byte INST_PING_FLOAT = (byte) 0b10000011;
+	public final static byte INST_PONG_FLOAT = (byte) 0b00000011;
+	// Instruction pair: photo
+	public final static byte INST_TRIG_PHOT = (byte) 0b10000101;
+	public final static byte INST_TOOK_PHOT = (byte) 0b00000101;
 	// Instruction pair: stop_all
 	public final static byte INST_STOP_ALL = (byte) 0b11111110;
 	public final static byte INST_STPD_ALL = (byte) 0b01111110;
 
-	// Other value: stop_all
+	// Other value:
 	public final static byte START_BYTE = (byte) 0b00000000;
 
-	// Other value: stop_all
+	// Other value: 
 	public final static int MESSAGE_LENGTH = (int) 6;
 
 }

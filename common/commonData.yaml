@@ -1,0 +1,98 @@
+# YAML for storing any data that is essential to be constant across devices
+# this YAML is then converted
+# instruction codes are most essential
+# all instructions are designed for Android prompt and Arduino response, so
+# the yaml is structured to group these pairs together under a common name
+# this common name only exists in this yaml and has no other significance
+# android_string and arduino_string show up in respective codebases
+# (as symbolic constants in c++ or ___ in Java) but NOT in actual comms!
+# all byte values written in direct binary for clarity;
+# hex would work, but binary allows easy confirmation of MSB/LSB significance
+
+# TODO - add instruction conflict checks in parser script
+
+# other notes about instruction protocol:
+# arduino-sent instructions always have MSB 0, android have 1
+# 4 bytes available in message; good for two int16's or one single-prec float
+# dual int instructions always have LSB 0, floats have 1
+---
+  instructions:
+    - ping_int:
+        # ping an int to and from Arduino to check latency and data integrity
+        android_string: "INST_PING_INT"
+        android_code: "0b10000010"
+        arduino_string: "INST_PONG_INT"
+        arduino_code: "0b00000010"
+    - error:
+        # instruction for errors going either direction
+        android_string: "INST_AN_ERROR"
+        android_code: "0b10000100"
+        arduino_string: "INST_AR_ERROR"
+        arduino_code: "0b00000100"
+    - led_color:
+        # tell arduino to set RGB led to the color contained in two ints:
+        # int1 = (red << 8) & (grn)
+        # int2 = (blu << 8)
+        # color values are exactly 1 byte; th
+        android_string: "INST_SET_LED"
+        android_code: "0b10000110"
+        arduino_string: "INST_CNF_LED"
+        arduino_code: "0b00000110"
+    - motor_speed:
+        # set motor speeds
+        android_string: "INST_SET_MTR"
+        android_code: "0b10001000"
+        arduino_string: "INST_CNF_MTR"
+        arduino_code: "0b00001000"
+    - position:
+        # get internal Arduino motor positions
+        android_string: "INST_GET_POS"
+        android_code: "0b10001010"
+        arduino_string: "INST_GOT_POS"
+        arduino_code: "0b00001010"
+    - home:
+        # reset internal Arduino motor positions
+        android_string: "INST_HOME_POS"
+        android_code: "0b10001100"
+        arduino_string: "INST_HOMD_POS"
+        arduino_code: "0b00001100"
+    - move:
+        # move motors to this absolute position with accels
+        android_string: "INST_MOVE_ABS"
+        android_code: "0b10001110"
+        arduino_string: "INST_MOVD_ABD"
+        arduino_code: "0b00001110"
+    - ustep:
+        # set motor microstepping
+        android_string: "INST_SET_USTEP"
+        android_code: "0b10010000"
+        arduino_string: "INST_CNF_USTEP"
+        arduino_code: "0b00010000"
+
+    - ping_float:
+        # ping an int to and from Arduino to check latency and data integrity
+        android_string: "INST_PING_FLOAT"
+        android_code: "0b10000011"
+        arduino_string: "INST_PONG_FLOAT"
+        arduino_code: "0b00000011"
+    - photo:
+        # take photo
+        android_string: "INST_TRIG_PHOT"
+        android_code: "0b10000101"
+        arduino_string: "INST_TOOK_PHOT"
+        arduino_code: "0b00000101"
+    - stop_all:
+        android_string: "INST_STOP_ALL" # stop everything!
+        android_code: "0b11111110"
+        arduino_string: "INST_STPD_ALL" # ok, I stopped everything!
+        arduino_code: "0b01111110"
+        # add float and int ping/pong and
+  # place any other global constants here
+  start_byte:
+    type: "byte"
+    string: "START_BYTE"
+    code: "0b00000000"
+  message_length:
+    type: "int"
+    string: "MESSAGE_LENGTH"
+    code: "6"
