@@ -16,7 +16,7 @@ public:
   void send(SoftwareSerial*);
   void decodeFromBytes(byte*);
   bool isCorrupted = false;
-  byte instructionValue = 0x00;
+  byte inst = 0x00;
   int intValue1 = 0;
   int intValue2 = 0;
   float floatValue = 0;

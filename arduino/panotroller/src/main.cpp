@@ -27,6 +27,7 @@ bool isMessageReady = false;
 byte inputByteArray[MESSAGE_LENGTH];
 BluetoothInstruction latestInstruction; // object to store decoded instruction
 SoftwareSerial bluetooth(BT_RX, BT_TX);
+void executeInstruction(BluetoothInstruction);
 
 void setup() {
   // put your setup code here, to run once:
@@ -82,4 +83,25 @@ void loop() {
   // if we are here it means we have seen a disconnected-to-connected transition
   // now if we loop back around to beginning of loop() we will become active
   setLedColor(UNVERIFIED_CONN_COLOR); // set LED to indicate unverified conn.
+}
+
+void executeInstruction(BluetoothInstruction in) {
+  // define behavior for all instructions we can receive
+  switch(in.inst) {
+    // because of how switch statements work, these should be listed
+    // in order of their priority (which needs low latency the most?)
+    case INST_PING_INT:
+      BluetoothInstruction(INST_PONG_INT,in.intValue1,in.intValue2).send(&bluetooth);
+      break;
+    case INST_PING_FLOAT:
+      BluetoothInstruction(INST_PONG_FLOAT,in.floatValue).send(&bluetooth);
+      break;
+    case INST_SET_LED:
+      // construct hex color code from 2 ints
+      setLedColor(
+        (((unsigned long) in.intValue1) << 16) || in.intValue2
+      );
+      BluetoothInstruction(INST_CNF_LED,in.intValue1,in.intValue2).send(&bluetooth);
+      break;
+  }
 }

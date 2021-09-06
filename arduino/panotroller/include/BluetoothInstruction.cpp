@@ -1,21 +1,23 @@
 #include "BluetoothInstruction.hpp"
 
+
+
 BluetoothInstruction::BluetoothInstruction(byte instruction, float value) {
   isFloatInstruction = true;
-  instructionValue = instruction;
+  inst = instruction;
   floatValue = value;
 }
 
 BluetoothInstruction::BluetoothInstruction(
       byte instruction, int value1, int value2) {
-  instructionValue = instruction;
+  inst = instruction;
   intValue1 = value1;
   intValue2 = value2;
 }
 
 BluetoothInstruction::BluetoothInstruction(byte instruction, byte value[4]) {
   isRawBytes = true;
-  instructionValue = instruction;
+  inst = instruction;
   for (int i=0; i<4; ++i) {
     rawByteValue[i] = value[i];
   }
@@ -23,7 +25,7 @@ BluetoothInstruction::BluetoothInstruction(byte instruction, byte value[4]) {
 
 void BluetoothInstruction::send(SoftwareSerial* serialDevice) {
   byte messageSend[MESSAGE_LENGTH] = {0};
-  messageSend[0] = this->instructionValue; // this-> for clarity
+  messageSend[0] = this->inst; // this-> for clarity
   // next 4 bytes depend on data type
   if(isRawBytes) {
     for(int i = 0; i < 4; i++) {
@@ -54,12 +56,12 @@ void BluetoothInstruction::decodeFromBytes(byte inBytes[MESSAGE_LENGTH]) {
   }
   if(inBytes[0]%2) { // if LSB is 1, this instruction is for a float value
     isFloatInstruction = true;
-    this->instructionValue = inBytes[0];
+    this->inst = inBytes[0];
     // chad pointer casting to recover float
     this->floatValue = *((float*) (inBytes+1));
   }
   else { // this is a dual int instruction (OR the one M->S bye instruction)
-    this->instructionValue = inBytes[0];
+    this->inst = inBytes[0];
     // I don't know why I don't use pointer casting here but this works
     this->intValue1 = int(
         ((byte) (inBytes[1])) << 8 |
