@@ -110,7 +110,7 @@ public class BluetoothService extends Service {
         return internalConnectedThread;
     }
     public ConnectedThread getBluetoothThread() {return internalConnectedThread; }
-    public void sendInstructionViaThread(ArduinoInstruction instructionIn) {
+    public void sendInstructionViaThread(BluetoothInstruction instructionIn) {
         if (internalConnectedThread != null) {
             internalConnectedThread.writeArduinoInstruction(instructionIn);
         }

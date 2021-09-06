@@ -2,7 +2,7 @@ package com.example.panotroller;
 
 import java.io.IOException;
 
-public class ArduinoInstruction {
+public class BluetoothInstruction {
     // abstraction for the data format we use to robustly send data over Bluetooth
 
     public byte instructionValue = 0x00;
@@ -17,28 +17,28 @@ public class ArduinoInstruction {
     //public final static int MESSAGE_LENGTH = 6;
 
     // this constructor is for making an instruction from bytes received from Arduino
-    public ArduinoInstruction(byte[] rawDataIn) throws CorruptedInstructionException, IOException {
-        convertBytesToInstruction(rawDataIn);
+    public BluetoothInstruction(byte[] rawDataIn) throws CorruptedInstructionException, IOException {
+        decodeFromBytes(rawDataIn);
     }
 
     // these constructors are for assembling instructions to send
-    public ArduinoInstruction(byte instruction, float value) {
+    public BluetoothInstruction(byte instruction, float value) {
         isFloatInstruction = true;
         instructionValue = instruction;
         floatValue = value;
     }
-    public ArduinoInstruction(byte instruction, short value1, short value2) {
+    public BluetoothInstruction(byte instruction, short value1, short value2) {
         isFloatInstruction = false;
         instructionValue = instruction;
         intValue1 = value1;
         intValue2 = value2;
     }
-    public ArduinoInstruction(byte instruction, byte[] value) {
+    public BluetoothInstruction(byte instruction, byte[] value) {
         isRawBytes = true;
         instructionValue = instruction;
         rawByteValue = value;
     }
-    private void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, IOException {
+    private void decodeFromBytes(byte[] inBytes) throws CorruptedInstructionException, IOException {
 
         if(inBytes.length != GeneratedConstants.MESSAGE_LENGTH) {
             throw new IOException("Wrong message length: "+inBytes.length);
