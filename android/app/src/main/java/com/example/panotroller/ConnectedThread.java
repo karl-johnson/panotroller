@@ -13,10 +13,10 @@ public class ConnectedThread extends Thread {
     // thread to send and receive data over Bluetooth
 
     /* MEMBERS */
-    private BluetoothSocket mSocket; // connection point for device we're connected to
+    private final BluetoothSocket mSocket; // connection point for device we're connected to
     private final Handler mHandler; // how to get information out of this thread
-    private InputStream mInStream; // incoming data stream from BT device
-    private OutputStream mOutStream; // outgoing data stream to BT device
+    private final InputStream mInStream; // incoming data stream from BT device
+    private final OutputStream mOutStream; // outgoing data stream to BT device
 
     private boolean messageInProgress = false; // keep track of whether message is in progress
     private int byteIndex = 0; // keep track of location in message
@@ -81,7 +81,7 @@ public class ConnectedThread extends Thread {
 
     public void writeArduinoInstruction(BluetoothInstruction inputInstruction) {
         // pretty simple to actually write data!
-        //Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
+        Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
         byte[] sendBytes = inputInstruction.convertInstructionToBytes();
         Log.d("BYTES_SENT","0x"+bytesToHex(sendBytes));
         try {
@@ -110,19 +110,19 @@ public class ConnectedThread extends Thread {
             try {mInStream.close();} catch (Exception e) {
                 Log.e("BT_CONNECTION", "Exception thrown while closing InStream");
             }
-            mInStream = null;
+            //mInStream = null;
         }
         if (mOutStream != null) {
             try {mOutStream.close();} catch (Exception e) {
                 Log.e("BT_CONNECTION", "Exception thrown while closing OutStream");
             }
-            mOutStream = null;
+            //mOutStream = null;
         }
         if (mSocket != null) {
             try {mSocket.close();} catch (Exception e) {
                 Log.e("BT_CONNECTION", "Exception thrown while closing Socket");
             }
-            mSocket = null;
+            //mSocket = null;
         }
     }
 }

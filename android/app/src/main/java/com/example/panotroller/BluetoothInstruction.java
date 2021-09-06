@@ -13,9 +13,6 @@ public class BluetoothInstruction {
     public float floatValue = 0;
     public byte[] rawByteValue = new byte[4];
 
-    //public final static byte START_BYTE = 0b00000000; // just null
-    //public final static int MESSAGE_LENGTH = 6;
-
     // this constructor is for making an instruction from bytes received from Arduino
     public BluetoothInstruction(byte[] rawDataIn) throws CorruptedInstructionException, IOException {
         decodeFromBytes(rawDataIn);
@@ -58,8 +55,8 @@ public class BluetoothInstruction {
             floatValue = Float.intBitsToFloat(intBits);
         }
         else {
-            intValue1 = (short) (((inBytes[1] & 0xFF) << 8) | (inBytes[2] & 0xFF));
-            intValue2 = (short) (((inBytes[3] & 0xFF) << 8) | (inBytes[4] & 0xFF));
+            intValue1 = (short) (((inBytes[2] & 0xFF) << 8) | (inBytes[1] & 0xFF));
+            intValue2 = (short) (((inBytes[4] & 0xFF) << 8) | (inBytes[3] & 0xFF));
         }
     }
     /*

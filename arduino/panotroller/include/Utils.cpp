@@ -26,8 +26,8 @@ void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
   while (serialDevice->available()) {
     byte inByte = serialDevice->read();
     if(messageInProgress) {
-      //Serial.print(inByte, HEX);
-      //Serial.print(" ");
+      Serial.print(inByte, HEX);
+      Serial.print(" ");
       saveArray[byteIndex] = inByte; // add byte to array
       byteIndex++;
       if(byteIndex == MESSAGE_LENGTH) {

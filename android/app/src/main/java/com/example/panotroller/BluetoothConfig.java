@@ -27,6 +27,7 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 public class BluetoothConfig extends AppCompatActivity {
@@ -52,6 +53,7 @@ public class BluetoothConfig extends AppCompatActivity {
     /* OTHER MEMBERS */
     private Set<BluetoothDevice> mPairedDevices; // set to keep track of all paired devices
     private List<String> mPairedDeviceNames = new ArrayList<String>();
+    private final Random mRandom = new Random();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,7 +145,7 @@ public class BluetoothConfig extends AppCompatActivity {
         // this is called only once we're bound to the service
         // TODO CHECK STATUS
         // turn on bluetooth if the user has it turned off
-
+        mBluetoothService.setHandler(mHandler);
         if(!mBTAdapter.isEnabled()) {
             // if it is off, launch built-in activity to turn on bluetooth
             // onResume is called upon returning from ACTION_REQUEST_ENABLE so this will keep
@@ -243,10 +245,13 @@ public class BluetoothConfig extends AppCompatActivity {
                             Toast.makeText(getBaseContext(),
                                     "Thread creation failed", Toast.LENGTH_SHORT).show();
                         }
-                        mHandler.obtainMessage(
-                                BluetoothService.CONN_STATUS_UPDATED,
-                                BluetoothService.STATUS_CONNECTED, 0,
-                                clickedDevice).sendToTarget();
+                        // we should now be connected to the HC-05 module
+                        // to ensure there is actually a microcontroller on the other end, ping it
+                        mBluetoothService.sendInstructionViaThread(
+                                new BluetoothInstruction(
+                                        GeneratedConstants.INST_PING_INT,
+                                        (short) mRandom.nextInt(),
+                                        (short) mRandom.nextInt())); // just random test numbers
                     }
                 }
             }.start();
@@ -273,9 +278,25 @@ public class BluetoothConfig extends AppCompatActivity {
                     updateBluetoothStatus(msg.arg1, (BluetoothDevice) msg.obj);
                     break;
                 case BluetoothService.NEW_INSTRUCTION_IN:
-                    // TODO
+                    BluetoothInstruction returnInstruction = (BluetoothInstruction) msg.obj;
+                    if(mBluetoothService.getConnectionStatus() == BluetoothService.STATUS_CONNECTING) {
+                        // this is our first test ping being returned
+                        // check that data from ping was preserved
+                        if(returnInstruction.intValue1 == mBluetoothService.lastSentInstruction.intValue1
+                        && returnInstruction.intValue2 == mBluetoothService.lastSentInstruction.intValue2) {
+                            // use null BluetoothDevice to signal that device hasn't changed
+                            updateBluetoothStatus(BluetoothService.STATUS_CONNECTED, null);
+                            long latency = System.currentTimeMillis() - mBluetoothService.lastSentInstructionTime;
+                            Log.d("LATENCY", "Latency from ping was " + latency + " ms");
+                        }
+                        else {
+
+                            Log.d("PING_VALUE_BAD", ConnectedThread.bytesToHex(returnInstruction.convertInstructionToBytes()));
+                        }
+                    }
                     break;
                 case BluetoothService.NEW_INSTRUCTION_CORRUPTED:
+                    Log.d("INST_CORRUPTED", "Received a corrupted instruction!");
                     // TODO
                     break;
             }
@@ -287,7 +308,7 @@ public class BluetoothConfig extends AppCompatActivity {
     private void updateBluetoothStatus(int status, BluetoothDevice device) {
         // updates bluetooth status info in BT Service
         mBluetoothService.setConnectionStatus(status);
-        mBluetoothService.connectedDevice = device;
+        if(device != null) mBluetoothService.connectedDevice = device; // only update if non-null
         // now update the text on screen
         onBluetoothStatusChange();
     }
@@ -335,7 +356,7 @@ public class BluetoothConfig extends AppCompatActivity {
                         getApplicationContext().getColor(R.color.green_connected));
                 // Enable "disconnect" button
                 mDisconnectButton.setEnabled(true);
-                mDisconnectButton.getBackground().setAlpha(255); // TODO doesn't work as intended yet
+                mDisconnectButton.getBackground().setAlpha(255);
                 // Vanish ListView and title TODO grey out instead
                 mDevicesListViewTitle.setVisibility(View.INVISIBLE);
                 mDevicesListView.setEnabled(false);

@@ -30,13 +30,19 @@ SoftwareSerial bluetooth(BT_RX, BT_TX);
 void executeInstruction(BluetoothInstruction);
 
 void setup() {
-  // put your setup code here, to run once:
+  // pinmodes are important for Software Serial
+  pinMode(BT_RX, INPUT);
+  pinMode(BT_TX, OUTPUT);
   Serial.begin(SERIAL_BAUD_RATE);
   bluetooth.begin(HC05_BAUD_RATE);
 }
 
 void loop() {
   // main loop
+  if(digitalRead(BT_STATE) != STATE_DISCONNECTED) {
+    // yes this looks weird but this definitely doesn't go in while loop
+    setLedColor(UNVERIFIED_CONN_COLOR);
+  }
   while(digitalRead(BT_STATE) != STATE_DISCONNECTED) {
     /* MAIN ACTION LOOP */
     // poll SoftwareSerial bluetooth connection
@@ -74,7 +80,7 @@ void loop() {
   // if we are here it means the HC-05 module is in a disconnected state
   Serial.println("HC-05 Disconnected.");
   isConnectionVerified = false;
-  while(digitalRead(BT_STATE == STATE_DISCONNECTED)) {
+  while(digitalRead(BT_STATE) == STATE_DISCONNECTED) {
     // as long as it is in this state, blink the LED slowly
     if((millis()/DISCONNECTED_BLINK_PERIOD) % 2) setLedColor(0);
     else setLedColor(DISCONNECTED_BLINK_COLOR);
@@ -82,7 +88,7 @@ void loop() {
   }
   // if we are here it means we have seen a disconnected-to-connected transition
   // now if we loop back around to beginning of loop() we will become active
-  setLedColor(UNVERIFIED_CONN_COLOR); // set LED to indicate unverified conn.
+
 }
 
 void executeInstruction(BluetoothInstruction in) {
@@ -91,6 +97,8 @@ void executeInstruction(BluetoothInstruction in) {
     // because of how switch statements work, these should be listed
     // in order of their priority (which needs low latency the most?)
     case INST_PING_INT:
+      Serial.print(in.intValue1, HEX);
+      Serial.print(in.intValue2, HEX);
       BluetoothInstruction(INST_PONG_INT,in.intValue1,in.intValue2).send(&bluetooth);
       break;
     case INST_PING_FLOAT:

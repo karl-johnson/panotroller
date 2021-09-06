@@ -1,6 +1,6 @@
 #include "BluetoothInstruction.hpp"
 
-
+BluetoothInstruction::BluetoothInstruction() {}
 
 BluetoothInstruction::BluetoothInstruction(byte instruction, float value) {
   isFloatInstruction = true;

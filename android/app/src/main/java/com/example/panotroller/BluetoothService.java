@@ -53,6 +53,12 @@ public class BluetoothService extends Service {
     // the binder has to do with how this Service is "bound" to each Activity which uses it
     private final IBinder binder = new LocalBinder();
 
+    public BluetoothInstruction lastSentInstruction = null; // last instruction sent to Arduino
+    public long lastSentInstructionTime = 0; // time at which last instruction was sent to Arduino
+
+    // who are WE (this app) connected to, if we are?
+    public BluetoothDevice connectedDevice = null; // track the single device
+
     // simple variable to track whether we're connected
     private int connectionStatus = STATUS_DISCONNECTED;
     public void setConnectionStatus(int newStatus) {
@@ -61,6 +67,9 @@ public class BluetoothService extends Service {
         if(Arrays.asList(STATUS_OFF,STATUS_DISCONNECTED,STATUS_CONNECTING,STATUS_CONNECTED)
                 .contains(newStatus)) {
             connectionStatus = newStatus;
+            if(newStatus == STATUS_OFF || newStatus == STATUS_DISCONNECTED) {
+                connectedDevice = null; // neither of these should have a valid connectedDevice
+            }
         }
         else {
             Log.e("BAD_BT_STATUS", "setConnectionStatus() passed invalid newStatus");
@@ -68,9 +77,6 @@ public class BluetoothService extends Service {
     }
 
     public int getConnectionStatus() {return connectionStatus;}
-
-    // who are WE (this app) connected to, if we are?
-    public BluetoothDevice connectedDevice = null; // track the single device
 
     @Override
     public void onCreate() {
@@ -110,17 +116,18 @@ public class BluetoothService extends Service {
         return internalConnectedThread;
     }
     public ConnectedThread getBluetoothThread() {return internalConnectedThread; }
+
     public void sendInstructionViaThread(BluetoothInstruction instructionIn) {
+        // sends the given instruction using the BT thread, if it exists
+        // also updates the lastSentInstruction members
         if (internalConnectedThread != null) {
+            lastSentInstruction = instructionIn;
+            lastSentInstructionTime = System.currentTimeMillis();
             internalConnectedThread.writeArduinoInstruction(instructionIn);
         }
         else {
             Log.e("SEND_W_NO_THREAD","Tried to send with no thread!");
         }
-    }
-
-    public void disconnect() {
-
     }
 
     public class LocalBinder extends Binder {
