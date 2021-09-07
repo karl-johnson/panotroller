@@ -8,9 +8,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.NavUtils;
 
-public class PanoSetup extends AppCompatActivity {
+public class ActivityPanoSetup extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +33,7 @@ public class PanoSetup extends AppCompatActivity {
             return true;
         }
         else if(item.getItemId() == R.id.continue_button) {
-            Intent intent = new Intent(this, PanoAcquisition.class);
+            Intent intent = new Intent(this, ActivityPanoAcquisition.class);
             startActivity(intent);
             return true;
         }

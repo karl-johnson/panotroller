@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/grey_bkd"
-    tools:context=".MainActivity">
+    tools:context=".ActivityMain">
 
 
     <androidx.appcompat.widget.Toolbar
@@ -63,6 +63,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:background="@color/light_grey"
+        android:enabled="false"
         android:text="Disconnect"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

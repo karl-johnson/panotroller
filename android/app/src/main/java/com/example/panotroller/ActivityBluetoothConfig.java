@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class BluetoothConfig extends AppCompatActivity {
+public class ActivityBluetoothConfig extends AppCompatActivity {
 
     /* CONSTANTS */
     // request code used to identify that the bluetooth on/off activity was launched
@@ -282,8 +282,8 @@ public class BluetoothConfig extends AppCompatActivity {
                     if(mBluetoothService.getConnectionStatus() == BluetoothService.STATUS_CONNECTING) {
                         // this is our first test ping being returned
                         // check that data from ping was preserved
-                        if(returnInstruction.intValue1 == mBluetoothService.lastSentInstruction.intValue1
-                        && returnInstruction.intValue2 == mBluetoothService.lastSentInstruction.intValue2) {
+                        if(returnInstruction.int1 == mBluetoothService.lastSentInstruction.int1
+                        && returnInstruction.int2 == mBluetoothService.lastSentInstruction.int2) {
                             // use null BluetoothDevice to signal that device hasn't changed
                             updateBluetoothStatus(BluetoothService.STATUS_CONNECTED, null);
                             long latency = System.currentTimeMillis() - mBluetoothService.lastSentInstructionTime;

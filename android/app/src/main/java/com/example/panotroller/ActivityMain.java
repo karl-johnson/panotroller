@@ -12,11 +12,12 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 
-public class MainActivity extends AppCompatActivity {
+public class ActivityMain extends AppCompatActivity {
 
     /* MEMBERS */
     private boolean mShouldUnbind = false;
     private BluetoothService mBluetoothService;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
 
         // define button actions
         findViewById(R.id.panoramaModeButton).setOnClickListener(this::launchPanoSetup);
-
 
         // start BluetoothService
         // though onCreate is called whenever MainActivity is re-opened,
@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void launchPanoSetup(View view) {
-        Intent intent = new Intent(this, PanoSetup.class);
+        Intent intent = new Intent(this, ActivityPanoSetup.class);
         startActivity(intent);
         // no need to pass any bluetooth data, as it's all handled by Bluetooth Service
     }

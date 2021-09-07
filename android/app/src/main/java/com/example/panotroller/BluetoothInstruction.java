@@ -5,11 +5,11 @@ import java.io.IOException;
 public class BluetoothInstruction {
     // abstraction for the data format we use to robustly send data over Bluetooth
 
-    public byte instructionValue = 0x00;
+    public byte inst = 0x00;
     public boolean isFloatInstruction = false;
     private boolean isRawBytes = false;
-    public short intValue1 = 0;
-    public short intValue2 = 0;
+    public short int1 = 0;
+    public short int2 = 0;
     public float floatValue = 0;
     public byte[] rawByteValue = new byte[4];
 
@@ -21,18 +21,18 @@ public class BluetoothInstruction {
     // these constructors are for assembling instructions to send
     public BluetoothInstruction(byte instruction, float value) {
         isFloatInstruction = true;
-        instructionValue = instruction;
+        inst = instruction;
         floatValue = value;
     }
     public BluetoothInstruction(byte instruction, short value1, short value2) {
         isFloatInstruction = false;
-        instructionValue = instruction;
-        intValue1 = value1;
-        intValue2 = value2;
+        inst = instruction;
+        int1 = value1;
+        int2 = value2;
     }
     public BluetoothInstruction(byte instruction, byte[] value) {
         isRawBytes = true;
-        instructionValue = instruction;
+        inst = instruction;
         rawByteValue = value;
     }
     private void decodeFromBytes(byte[] inBytes) throws CorruptedInstructionException, IOException {
@@ -44,9 +44,9 @@ public class BluetoothInstruction {
             // we have a corrupted instruction
             throw new CorruptedInstructionException("Got Corrupted Instruction");
         }
-        instructionValue = inBytes[0];
+        inst = inBytes[0];
         // hard-coded nature of our comm protocol: LSB 1 for float instruction
-        isFloatInstruction = (instructionValue & (byte) 0x01) == 1;
+        isFloatInstruction = (inst & (byte) 0x01) == 1;
         if(isFloatInstruction) {
             int intBits = inBytes[4] << 24
                     | (inBytes[3] & 0xFF) << 16
@@ -55,8 +55,8 @@ public class BluetoothInstruction {
             floatValue = Float.intBitsToFloat(intBits);
         }
         else {
-            intValue1 = (short) (((inBytes[2] & 0xFF) << 8) | (inBytes[1] & 0xFF));
-            intValue2 = (short) (((inBytes[4] & 0xFF) << 8) | (inBytes[3] & 0xFF));
+            int1 = (short) (((inBytes[2] & 0xFF) << 8) | (inBytes[1] & 0xFF));
+            int2 = (short) (((inBytes[4] & 0xFF) << 8) | (inBytes[3] & 0xFF));
         }
     }
     /*
@@ -81,7 +81,7 @@ public class BluetoothInstruction {
         byte[] internalBytes = new byte[GeneratedConstants.MESSAGE_LENGTH+1]; // should be initialized to 0
         // length MESSAGE_LENGTH + 1 b/c start byte
         internalBytes[0] = 0x00;
-        internalBytes[1] = instructionValue;
+        internalBytes[1] = inst;
         if(isRawBytes) {
             System.arraycopy(rawByteValue, 0, internalBytes, 2, 4);
         }
@@ -94,10 +94,10 @@ public class BluetoothInstruction {
                 internalBytes[2] = (byte) (intBits);
                 // swap endianness for Arduino. This is stupid but works
             } else {
-                internalBytes[2] = (byte) (intValue1 >> 8);
-                internalBytes[3] = (byte) (intValue1);
-                internalBytes[4] = (byte) (intValue2 >> 8);
-                internalBytes[5] = (byte) (intValue2);
+                internalBytes[2] = (byte) (int1 >> 8);
+                internalBytes[3] = (byte) (int1);
+                internalBytes[4] = (byte) (int2 >> 8);
+                internalBytes[5] = (byte) (int2);
             }
         }
         internalBytes[6] = XORByteArray(internalBytes); // index 5 is 0 prior to this so OK

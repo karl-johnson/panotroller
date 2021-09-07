@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 
-public class PanoAcquisition extends AppCompatActivity {
+public class ActivityPanoAcquisition extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

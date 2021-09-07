@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -16,7 +17,7 @@ import java.util.UUID;
 
 public class BluetoothService extends Service {
     // service to enable continuous bluetooth communication regardless of what activity is open
-    // might eventually allow control of connection through notif without active activity
+    // might eventually allow control of connection through notification without active activity
     // the service is started in MainActivity in onStart()
     // this means startService can be called multiple times, but it's only created on the first call
 
@@ -44,17 +45,20 @@ public class BluetoothService extends Service {
     private BluetoothSocket internalBTSocket = null;
     // this is the thread which independently handles incoming and outgoing data over bluetooth
     private ConnectedThread internalConnectedThread = null;
-    /*
-     the active Activity must provide a handler as a way for information to be passed from the
-     ConnectedThread to the Activity. The Handler is not only how information is sent, but also
-     determines what is done with that information the the main Activity
-     */
-    private Handler mHandler;
+
+    // all incoming data from the bluetooth stream goes through us before being sent back:
+    // ConnectedThread --(internalHandler)--> BluetoothService --(externalHandler)--> Activity
+    // Handler for getting information from ConnectedThread to this BluetoothService
+    private Handler internalHandler = new BluetoothServiceHandler();
+    // Handler for forwarding information from us (BluetoothService) to whoever wants it
+    private Handler externalHandler;
+
     // the binder has to do with how this Service is "bound" to each Activity which uses it
     private final IBinder binder = new LocalBinder();
 
     public BluetoothInstruction lastSentInstruction = null; // last instruction sent to Arduino
     public long lastSentInstructionTime = 0; // time at which last instruction was sent to Arduino
+    public long lastLatency = 0; // last calculated latency
 
     // who are WE (this app) connected to, if we are?
     public BluetoothDevice connectedDevice = null; // track the single device
@@ -84,7 +88,7 @@ public class BluetoothService extends Service {
     }
 
     public void setHandler(Handler handlerIn) {
-        mHandler = handlerIn;
+        externalHandler = handlerIn;
     }
 
     public BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
@@ -101,12 +105,13 @@ public class BluetoothService extends Service {
         // get BT thread if exists, create if not
         if(internalBTSocket != null) {
             if (internalConnectedThread == null) {
-                if (mHandler == null) {
-                    Log.e("NO_HANDLER_PASSED","No handler provided to BT service.");
+                if (externalHandler == null) {
+                    Log.w("NO_HANDLER_PASSED","No external handler provided to BT service.");
                 }
-                internalConnectedThread = new ConnectedThread(internalBTSocket, mHandler);
+                internalConnectedThread = new ConnectedThread(internalBTSocket, internalHandler);
                 internalConnectedThread.start();
-                Log.d("GET_BT_THREAD", "Created BT Thread: " + String.valueOf(internalConnectedThread != null));
+                Log.d("GET_BT_THREAD",
+                        "Created BT Thread: " + String.valueOf(internalConnectedThread != null));
                 Log.d("BT_THREAD_ALIVE",String.valueOf(internalConnectedThread.isAlive()));
             }
         }
@@ -119,7 +124,8 @@ public class BluetoothService extends Service {
 
     public void sendInstructionViaThread(BluetoothInstruction instructionIn) {
         // sends the given instruction using the BT thread, if it exists
-        // also updates the lastSentInstruction members
+        // this must be passed through us (the service) so we can calculate latency and also
+        // update the lastSentInstruction properly
         if (internalConnectedThread != null) {
             lastSentInstruction = instructionIn;
             lastSentInstructionTime = System.currentTimeMillis();
@@ -144,4 +150,69 @@ public class BluetoothService extends Service {
         // destroy bluetooth socket
         Toast.makeText(this, "BT service stopped", Toast.LENGTH_SHORT).show();
     }
+
+    /* BLUETOOTH SERVICE HANDLER */
+
+    class BluetoothServiceHandler extends Handler {
+        // what we do with messages coming from ConnectedThread
+        @Override
+        public void handleMessage(Message msg) {
+            Log.d("BL_SERVICE_HANDLER", "Bluetooth Service handler called!");
+            // for now, only need to look at timing of message received to compute latency
+            // eventually may want to use this to auto re-send corrupted messages etc.
+            if(msg.what == NEW_INSTRUCTION_IN) {
+                BluetoothInstruction received = (BluetoothInstruction) msg.obj;
+                // only compute latency on instructions which are meant for doing so
+                if(received.inst == GeneratedConstants.INST_PONG_INT) {
+                    if(lastSentInstruction.inst == GeneratedConstants.INST_PING_INT) {
+                        if(received.int1 == lastSentInstruction.int1 &&
+                                received.int2 == lastSentInstruction.int2) {
+                            // valid ping!
+                            lastLatency = System.currentTimeMillis() - lastSentInstructionTime;
+                            Log.d("BT_PING",
+                                    "Successful Int Ping: " + lastLatency + "ms");
+                        }
+                        else {
+                            Log.d("PING_VALUE_BAD",
+                                    ConnectedThread.bytesToHex(received.convertInstructionToBytes()));
+                        }
+                    }
+                }
+                if(received.inst == GeneratedConstants.INST_PONG_FLOAT) {
+                    if(lastSentInstruction.inst == GeneratedConstants.INST_PING_FLOAT) {
+                        if(received.floatValue == lastSentInstruction.floatValue) {
+                            // valid ping!
+                            lastLatency = System.currentTimeMillis() - lastSentInstructionTime;
+                            Log.d("BT_PING",
+                                    "Successful Float Ping: " + lastLatency + "ms");
+                        }
+                        else {
+                            Log.d("PING_VALUE_BAD",
+                                    ConnectedThread.bytesToHex(received.convertInstructionToBytes()));
+                        }
+                    }
+                }
+            }
+            // now that we're done with the message, send it along
+            externalHandler.sendMessage(msg);
+        }
+    }
+
+    /* BLUETOOTH BAR HELPERS */
+
+    public class BluetoothBarInfo {
+        // way to localize data sent to bluetooth bar fragment when it is updated
+        // doing it like this allows to expand what info is sent in the future more easily
+        public int status;
+        public long latency;
+        public BluetoothBarInfo(int statusIn, long latencyIn) {
+            status = statusIn; latency = latencyIn;
+        }
+    }
+
+    // simple way for any activity to quickly send data to update bluetooth bar fragment
+    public BluetoothBarInfo getBluetoothBarInfo() {
+        return new BluetoothBarInfo(connectionStatus, lastLatency);
+    }
+
 }
