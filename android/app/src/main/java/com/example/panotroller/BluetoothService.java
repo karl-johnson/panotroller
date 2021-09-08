@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.UUID;
 
 public class BluetoothService extends Service {
@@ -41,6 +42,8 @@ public class BluetoothService extends Service {
 
     /* OTHER IMPORTANT MEMBERS */
 
+    private final Random mRandom = new Random();
+
     // the BluetoothSocket is the abstraction for "where" the other device connects
     private BluetoothSocket internalBTSocket = null;
     // this is the thread which independently handles incoming and outgoing data over bluetooth
@@ -51,7 +54,7 @@ public class BluetoothService extends Service {
     // Handler for getting information from ConnectedThread to this BluetoothService
     private Handler internalHandler = new BluetoothServiceHandler();
     // Handler for forwarding information from us (BluetoothService) to whoever wants it
-    private Handler externalHandler;
+    private Handler externalHandler = null;
 
     // the binder has to do with how this Service is "bound" to each Activity which uses it
     private final IBinder binder = new LocalBinder();
@@ -194,11 +197,27 @@ public class BluetoothService extends Service {
                 }
             }
             // now that we're done with the message, send it along
-            externalHandler.sendMessage(msg);
+            if(externalHandler != null) externalHandler.sendMessage(Message.obtain(msg));
+            else Log.w("MESSAGE_NOT_SENT",
+                    "Message didn't exit BTService because externalHandler is null!");
         }
     }
 
     /* BLUETOOTH BAR HELPERS */
+
+    public void sendPing(boolean doFloat) {
+        // simple helper function to send pings for us
+        if(doFloat) {
+            sendInstructionViaThread(new BluetoothInstruction(
+                    GeneratedConstants.INST_PING_FLOAT, mRandom.nextFloat()));
+        }
+        else {
+            sendInstructionViaThread(new BluetoothInstruction(
+                    GeneratedConstants.INST_PING_INT,
+                    (short) mRandom.nextInt(), (short) mRandom.nextInt()));
+        }
+
+    }
 
     public class BluetoothBarInfo {
         // way to localize data sent to bluetooth bar fragment when it is updated

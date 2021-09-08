@@ -48,7 +48,7 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
     private BluetoothService mBluetoothService; //
     private BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
     private Handler mHandler = new BluetoothConfigHandler(); // Handler to deal with information coming back over BT connection
-    private boolean mShouldUnbind = false; // Tracks whether unbinding is necessary on act. exit
+    private boolean mIsBound = false; // Tracks whether unbinding is necessary on act. exit
 
     /* OTHER MEMBERS */
     private Set<BluetoothDevice> mPairedDevices; // set to keep track of all paired devices
@@ -90,7 +90,7 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
         getApplicationContext().bindService(
                 BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d("TRY_BT_SERVICE", "Past BT service code");
-        mShouldUnbind = true;
+        mIsBound = true;
         if(mBluetoothService != null) {
             Log.d("BT_SERVICE_EXISTS", "BT Service exists");
             Toast.makeText(getApplicationContext(),
@@ -100,10 +100,10 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
 
     protected void onDestroy() {
         super.onDestroy();
-        if (mShouldUnbind) {
+        if (mIsBound) {
             // Release information about the service's state.
             getApplicationContext().unbindService(mServiceConnection);
-            mShouldUnbind = false;
+            mIsBound = false;
         }
     }
 
@@ -130,22 +130,25 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
             Log.d("SERVICE_CONNECTED","BT Service Connected");
-            Toast.makeText(getApplicationContext(),
-                    "BT service bound", Toast.LENGTH_SHORT).show();
             onServiceConnectedBluetoothTasks();
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             // don't need to do anything but apparently we need to say this anyways
+
         }
     };
 
     private void onServiceConnectedBluetoothTasks() {
         /* FUNDAMENTAL BLUETOOTH TASKS */
         // this is called only once we're bound to the service
-        // TODO CHECK STATUS
-        // turn on bluetooth if the user has it turned off
         mBluetoothService.setHandler(mHandler);
+        // turn on bluetooth if the user has it turned off
+        if(mBluetoothService.getConnectionStatus() >= BluetoothService.STATUS_CONNECTING) {
+            onBluetoothStatusChange();
+            return;
+        }
+
         if(!mBTAdapter.isEnabled()) {
             // if it is off, launch built-in activity to turn on bluetooth
             // onResume is called upon returning from ACTION_REQUEST_ENABLE so this will keep

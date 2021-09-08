@@ -18,11 +18,15 @@ public class ActivityMain extends AppCompatActivity {
     private boolean mShouldUnbind = false;
     private BluetoothService mBluetoothService;
 
+    /* UI OBJECTS */
+    private FragmentBluetoothBar mBluetoothBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mBluetoothBar = (FragmentBluetoothBar) getSupportFragmentManager().findFragmentById(R.id.main_bt_bar);
 
         // configure action bar
         Toolbar thisToolbar = (Toolbar) findViewById(R.id.main_toolbar);
@@ -54,6 +58,12 @@ public class ActivityMain extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+
+    }
+
     /* SERVICE CONNECTION - NEEDED TO CONNECT TO BLUETOOTH SERVICE */
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -65,10 +75,14 @@ public class ActivityMain extends AppCompatActivity {
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
             Log.d("SERVICE_CONNECTED","BT Service Connected");
+
+            // start Bluetooth Bar's 1-second interval self-updating clock
+            mBluetoothBar.beginUpdates(mBluetoothService);
+
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
-            // don't need to do anything but apparently we need to say this anyways
+            mBluetoothBar.stopUpdates();
         }
     };
 
@@ -76,6 +90,5 @@ public class ActivityMain extends AppCompatActivity {
     public void launchPanoSetup(View view) {
         Intent intent = new Intent(this, ActivityPanoSetup.class);
         startActivity(intent);
-        // no need to pass any bluetooth data, as it's all handled by Bluetooth Service
     }
 }
