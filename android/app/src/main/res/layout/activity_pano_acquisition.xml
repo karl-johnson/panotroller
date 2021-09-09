@@ -18,7 +18,7 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
     <fragment
-        android:id="@+id/pano_acq_bt_fragment"
+        android:id="@+id/pano_acq_bt_bar"
         android:name="com.example.panotroller.FragmentBluetoothBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -36,7 +36,7 @@
         android:text="Photos"
         android:textColor="@color/green_accent"
         app:layout_constraintStart_toStartOf="@+id/pano_acq_viewer"
-        app:layout_constraintTop_toBottomOf="@+id/pano_acq_bt_fragment" />
+        app:layout_constraintTop_toBottomOf="@+id/pano_acq_bt_bar" />
 
     <TextView
         android:id="@+id/pano_acq_time_text"

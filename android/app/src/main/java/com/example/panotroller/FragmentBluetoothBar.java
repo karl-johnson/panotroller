@@ -20,6 +20,7 @@ public class FragmentBluetoothBar extends Fragment {
     private final static int UPDATE_FREQUENCY = 1000; // frequency at which we update, in ms
     final Handler updateHandler = new Handler();
     boolean mViewCreated = false;
+    boolean mUpdatesStarted = false;
 
     /* UI OBJECTS */
     private FrameLayout mFrameLayout;
@@ -44,7 +45,6 @@ public class FragmentBluetoothBar extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         mFrameLayout = view.findViewById(R.id.bar_frame);
         mTextView = view.findViewById(R.id.bar_text);
         mFrameLayout.setOnClickListener(this::onBluetoothBarPress);
@@ -66,8 +66,9 @@ public class FragmentBluetoothBar extends Fragment {
     }
 
     public void beginUpdates(BluetoothService serviceIn) {
-        // start updating bar every
-        // TODO add retry capability?
+        // start updating bar every UPDATE_FREQUENCY ms
+        Log.d("BT_BAR", "Begin Updates Called");
+        if(mUpdatesStarted) return; // don't post more to handler if we're already updating
         updateHandler.postDelayed(new Runnable() {
             public void run() {
                 update(serviceIn.getBluetoothBarInfo()); // update bar with last latency
@@ -77,11 +78,13 @@ public class FragmentBluetoothBar extends Fragment {
                 updateHandler.postDelayed(this, UPDATE_FREQUENCY);
             }
         }, UPDATE_FREQUENCY);
+        mUpdatesStarted = true;
     }
 
     public void stopUpdates() {
         Log.d("FRAG_STOPPED", "Fragment stopUpdates() called!");
         updateHandler.removeCallbacksAndMessages(null);
+        mUpdatesStarted = false;
     }
 
     // Update bar status using the given information pulled from the bt. service
@@ -92,19 +95,19 @@ public class FragmentBluetoothBar extends Fragment {
             // TODO improve performance by eliminating redundant setBackgroundColor calls
             switch(in.status) {
                 case BluetoothService.STATUS_OFF:
-                    this.getView().setBackgroundColor(getContext().getColor(R.color.red_disconnected));
+                    mTextView.setBackgroundColor(getContext().getColor(R.color.red_disconnected));
                     mTextView.setText("Bluetooth Disabled");
                     break;
                 case BluetoothService.STATUS_DISCONNECTED:
-                    this.getView().setBackgroundColor(getContext().getColor(R.color.red_disconnected));
+                    mTextView.setBackgroundColor(getContext().getColor(R.color.red_disconnected));
                     mTextView.setText("Bluetooth Disconnected");
                     break;
                 case BluetoothService.STATUS_CONNECTING:
-                    this.getView().setBackgroundColor(getContext().getColor(R.color.orange_connecting));
+                    mTextView.setBackgroundColor(getContext().getColor(R.color.orange_connecting));
                     mTextView.setText("Connecting...");
                     break;
                 case BluetoothService.STATUS_CONNECTED:
-                    this.getView().setBackgroundColor(getContext().getColor(R.color.green_connected));
+                    mTextView.setBackgroundColor(getContext().getColor(R.color.connected));
                     mTextView.setText("Connected (" + in.latency + "ms)");
                     break;
             }

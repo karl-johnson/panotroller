@@ -11,14 +11,13 @@ import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
 
 public class ActivityPanoSetup extends AppCompatActivity {
 
     /* MEMBERS */
-    private boolean mIsBound = false;
+    private boolean mShouldUnbind = false;
     private BluetoothService mBluetoothService;
 
     /* UI OBJECTS */
@@ -38,29 +37,31 @@ public class ActivityPanoSetup extends AppCompatActivity {
         Toolbar thisToolbar = (Toolbar) findViewById(R.id.pano_setup_toolbar);
         setSupportActionBar(thisToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // add back button to action bar
-
         // bind to bluetooth service
     }
 
-    public void onStart() {
-        super.onStart();
+    public void onResume() {
+        super.onResume();
         Log.d("TRY_BT_SERVICE", "Trying to connect to BT service");
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
-        getApplicationContext().bindService(
+        mShouldUnbind = bindService(
                 BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d("TRY_BT_SERVICE", "Past BT service code");
-        mIsBound = true;
-        if(mBluetoothService != null) {
-            Log.d("BT_SERVICE_EXISTS", "BT Service exists");
-            Toast.makeText(getApplicationContext(),
-                    "Bluetooth Service Exists", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Log.d("PANO_SETUP", "onPause");
+        if (mShouldUnbind) {
+            mShouldUnbind = false;
+            unbindService(mServiceConnection);
         }
     }
 
     /* SERVICE CONNECTION - NEEDED TO CONNECT TO BLUETOOTH SERVICE */
 
     private ServiceConnection mServiceConnection = new ServiceConnection() {
-
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {

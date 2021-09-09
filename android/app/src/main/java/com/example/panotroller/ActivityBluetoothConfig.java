@@ -356,7 +356,7 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
                 mBluetoothStatusText.setText(
                         "Connected to " + mBluetoothService.connectedDevice.getName());
                 mBluetoothStatusText.setTextColor(
-                        getApplicationContext().getColor(R.color.green_connected));
+                        getApplicationContext().getColor(R.color.green_accent));
                 // Enable "disconnect" button
                 mDisconnectButton.setEnabled(true);
                 mDisconnectButton.getBackground().setAlpha(255);

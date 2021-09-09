@@ -24,6 +24,7 @@ public class ActivityMain extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("MAIN", "onCreate");
         setContentView(R.layout.activity_main);
 
         mBluetoothBar = (FragmentBluetoothBar) getSupportFragmentManager().findFragmentById(R.id.main_bt_bar);
@@ -43,26 +44,45 @@ public class ActivityMain extends AppCompatActivity {
         // startService only creates a new service on the very first call
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         startService(BTServiceIntent);
-        bindService(BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+        // NOTE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // don't bind with getApplicationContext.bindService() all the time because then
+        // activities will trip over each other due to trying to bind/unbind from same context
+        mShouldUnbind = bindService(BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
         // NOTE: service won't start if it's not in AndroidManifest.xml
-        mShouldUnbind = true;
+        // mShouldUnbind = true;
     }
 
+    public void onStart() {
+        super.onStart();
+        Log.d("MAIN", "onStart");
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (mShouldUnbind) {
-            unbindService(mServiceConnection);
-            mShouldUnbind = false;
-        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-
+        Log.d("MAIN", "onResume");
+        if(!mShouldUnbind) { // if not already bound (can be called separately from onCreate)
+            Log.d("MAIN", "onResume binding attempt");
+            Intent BTServiceIntent = new Intent(this, BluetoothService.class);
+            mShouldUnbind = bindService(
+                    BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+            Log.d("MAIN", "mShouldUnbind: " + mShouldUnbind);
+        }
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Log.d("MAIN", "onPause, mShouldUnbind " + mShouldUnbind);
+        if(mShouldUnbind) {
+            Log.d("MAIN", "Proceeding with unbinding (mShouldUnbind must be true!)");
+            mShouldUnbind = false;
+            unbindService(mServiceConnection);
+
+        }
+    }
+
 
     /* SERVICE CONNECTION - NEEDED TO CONNECT TO BLUETOOTH SERVICE */
 
@@ -71,6 +91,7 @@ public class ActivityMain extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
+            Log.d("MAIN", "onServiceConnected");
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
@@ -78,7 +99,6 @@ public class ActivityMain extends AppCompatActivity {
 
             // start Bluetooth Bar's 1-second interval self-updating clock
             mBluetoothBar.beginUpdates(mBluetoothService);
-
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
