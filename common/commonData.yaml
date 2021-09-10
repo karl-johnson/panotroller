@@ -68,7 +68,6 @@
         android_code: "0b10010000"
         arduino_string: "INST_CNF_USTEP"
         arduino_code: "0b00010000"
-
     - ping_float:
         # ping an int to and from Arduino to check latency and data integrity
         android_string: "INST_PING_FLOAT"
@@ -81,6 +80,12 @@
         android_code: "0b10000101"
         arduino_string: "INST_TOOK_PHOT"
         arduino_code: "0b00000101"
+    - mode:
+        # change motor mode
+        android_string: "INST_SET_MODE"
+        android_code: "0b10000111"
+        arduino_string: "INST_CNF_MODE"
+        arduino_code: "0b00000111"
     - stop_all:
         android_string: "INST_STOP_ALL" # stop everything!
         android_code: "0b11111110"

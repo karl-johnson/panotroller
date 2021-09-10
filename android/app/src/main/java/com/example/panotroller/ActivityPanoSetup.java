@@ -14,7 +14,13 @@ import android.view.MenuItem;
 
 import androidx.appcompat.widget.Toolbar;
 
+import io.github.controlwear.virtual.joystick.android.JoystickView;
+
 public class ActivityPanoSetup extends AppCompatActivity {
+
+    /* CONSTANTS */
+    private final static int MAX_JOY_MOTOR_SPEED = 400;
+    private final static int JOY_UPDATE_FREQUENCY = 100; // update frequency of joystick in ms
 
     /* MEMBERS */
     private boolean mShouldUnbind = false;
@@ -22,16 +28,17 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
+    private JoystickView mJoystick;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // apply layout
         setContentView(R.layout.activity_pano_setup);
-
+        // assign UI members
         mBluetoothBar = (FragmentBluetoothBar) getSupportFragmentManager().findFragmentById(
                 R.id.pano_setup_bt_bar);
-
+        mJoystick = (JoystickView) findViewById(R.id.joystick);
         // setup action bar
         setTitle("Panorama Setup");
         Toolbar thisToolbar = (Toolbar) findViewById(R.id.pano_setup_toolbar);
@@ -72,12 +79,32 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
             // start Bluetooth Bar's 1-second interval self-updating clock
             mBluetoothBar.beginUpdates(mBluetoothService);
+            setJoystickListeners();
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             mBluetoothBar.stopUpdates();
         }
     };
+
+    /* JOYSTICK METHODS */
+
+    private void setJoystickListeners() {
+        mJoystick.setOnMoveListener(new JoystickView.OnMoveListener() {
+            @Override
+            public void onMove(int angle, int strength) {
+                sendMotorVels((short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.cos(Math.toRadians(angle))),
+                        (short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.sin(Math.toRadians(angle))));
+            }
+        }, JOY_UPDATE_FREQUENCY);
+    }
+
+    public void sendMotorVels(short XVel, short YVel) {
+        // send motor velocity in 1/8 steps per second
+        mBluetoothService.sendInstructionViaThread(new BluetoothInstruction(
+                GeneratedConstants.INST_SET_MTR, XVel, YVel));
+        Log.d("VELS_SENT", String.valueOf(XVel) + " " + String.valueOf(YVel));
+    }
 
     /* TOOLBAR SETUP METHODS */
     @Override

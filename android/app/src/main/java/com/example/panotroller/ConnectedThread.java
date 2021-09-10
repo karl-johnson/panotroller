@@ -57,7 +57,7 @@ public class ConnectedThread extends Thread {
                             try {
                                 BluetoothInstruction newInstruction = new BluetoothInstruction(saveArray);
                                 mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
-                                Log.d("SENT","Sent instruction handler");
+                                //Log.d("SENT","Sent instruction handler");
                             } catch (BluetoothInstruction.CorruptedInstructionException e) {
                                 mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_CORRUPTED).sendToTarget();
                             } catch (IOException e2) {
@@ -81,9 +81,9 @@ public class ConnectedThread extends Thread {
 
     public void writeArduinoInstruction(BluetoothInstruction inputInstruction) {
         // pretty simple to actually write data!
-        Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
+        //Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
         byte[] sendBytes = inputInstruction.convertInstructionToBytes();
-        Log.d("BYTES_SENT","0x"+bytesToHex(sendBytes));
+        //Log.d("BYTES_SENT","0x"+bytesToHex(sendBytes));
         try {
             mOutStream.write(sendBytes);
         } catch (IOException e) {

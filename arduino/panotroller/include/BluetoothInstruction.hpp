@@ -20,8 +20,8 @@ public:
   int intValue1 = 0;
   int intValue2 = 0;
   float floatValue = 0;
-private:
   bool isFloatInstruction = false;
+private:
   bool isRawBytes = false;
   byte rawByteValue[4];
   byte XORbyteArray(byte*, int);

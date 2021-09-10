@@ -35,6 +35,9 @@ typedef enum {
 	// Instruction pair: photo
 	INST_TRIG_PHOT = 0b10000101,
 	INST_TOOK_PHOT = 0b00000101,
+	// Instruction pair: mode
+	INST_SET_MODE = 0b10000111,
+	INST_CNF_MODE = 0b00000111,
 	// Instruction pair: stop_all
 	INST_STOP_ALL = 0b11111110,
 	INST_STPD_ALL = 0b01111110

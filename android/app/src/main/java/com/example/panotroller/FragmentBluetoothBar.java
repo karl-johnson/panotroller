@@ -73,7 +73,10 @@ public class FragmentBluetoothBar extends Fragment {
             public void run() {
                 update(serviceIn.getBluetoothBarInfo()); // update bar with last latency
                 if(serviceIn.getConnectionStatus() == BluetoothService.STATUS_CONNECTED) {
-                    serviceIn.sendPing(false); // send a new ping too
+                    if(System.currentTimeMillis() >= serviceIn.lastSentInstructionTime + UPDATE_FREQUENCY) {
+                        // if we haven't sent an instruction in this cycle, send a ping
+                        serviceIn.sendPing(false);
+                    }
                 }
                 updateHandler.postDelayed(this, UPDATE_FREQUENCY);
             }
@@ -90,7 +93,7 @@ public class FragmentBluetoothBar extends Fragment {
     // Update bar status using the given information pulled from the bt. service
     @SuppressLint("SetTextI18n")
     public void update(BluetoothService.BluetoothBarInfo in) {
-        Log.d("BT_BAR_UPDATE", "Bluetooth Bar update() called");
+        //Log.d("BT_BAR_UPDATE", "Bluetooth Bar update() called");
         if(mViewCreated) {
             // TODO improve performance by eliminating redundant setBackgroundColor calls
             switch(in.status) {

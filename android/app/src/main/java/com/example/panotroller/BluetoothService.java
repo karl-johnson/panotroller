@@ -160,41 +160,13 @@ public class BluetoothService extends Service {
         // what we do with messages coming from ConnectedThread
         @Override
         public void handleMessage(Message msg) {
-            Log.d("BL_SERVICE_HANDLER", "Bluetooth Service handler called!");
+            //Log.d("BL_SERVICE_HANDLER", "Bluetooth Service handler called!");
             // for now, only need to look at timing of message received to compute latency
             // eventually may want to use this to auto re-send corrupted messages etc.
             if(msg.what == NEW_INSTRUCTION_IN) {
-                BluetoothInstruction received = (BluetoothInstruction) msg.obj;
-                // only compute latency on instructions which are meant for doing so
-                if(received.inst == GeneratedConstants.INST_PONG_INT) {
-                    if(lastSentInstruction.inst == GeneratedConstants.INST_PING_INT) {
-                        if(received.int1 == lastSentInstruction.int1 &&
-                                received.int2 == lastSentInstruction.int2) {
-                            // valid ping!
-                            lastLatency = System.currentTimeMillis() - lastSentInstructionTime;
-                            Log.d("BT_PING",
-                                    "Successful Int Ping: " + lastLatency + "ms");
-                        }
-                        else {
-                            Log.d("PING_VALUE_BAD",
-                                    ConnectedThread.bytesToHex(received.convertInstructionToBytes()));
-                        }
-                    }
-                }
-                if(received.inst == GeneratedConstants.INST_PONG_FLOAT) {
-                    if(lastSentInstruction.inst == GeneratedConstants.INST_PING_FLOAT) {
-                        if(received.floatValue == lastSentInstruction.floatValue) {
-                            // valid ping!
-                            lastLatency = System.currentTimeMillis() - lastSentInstructionTime;
-                            Log.d("BT_PING",
-                                    "Successful Float Ping: " + lastLatency + "ms");
-                        }
-                        else {
-                            Log.d("PING_VALUE_BAD",
-                                    ConnectedThread.bytesToHex(received.convertInstructionToBytes()));
-                        }
-                    }
-                }
+                // Computing latency on every transaction for now
+                // TODO blacklist instructions that have too long of a delay for reasonable ping
+                lastLatency = System.currentTimeMillis() - lastSentInstructionTime;
             }
             // now that we're done with the message, send it along
             if(externalHandler != null) externalHandler.sendMessage(Message.obtain(msg));

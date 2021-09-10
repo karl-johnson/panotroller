@@ -26,12 +26,13 @@ void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
   while (serialDevice->available()) {
     byte inByte = serialDevice->read();
     if(messageInProgress) {
-      Serial.print(inByte, HEX);
-      Serial.print(" ");
+      //Serial.print(inByte, HEX);
+      //Serial.print(" ");
       saveArray[byteIndex] = inByte; // add byte to array
       byteIndex++;
       if(byteIndex == MESSAGE_LENGTH) {
         // if our read data is now the length of a message
+        //Serial.println();
         *readyFlag = true;
         byteIndex = 0; // overwrite old message - kinda dangerous
         messageInProgress = false; // message is over

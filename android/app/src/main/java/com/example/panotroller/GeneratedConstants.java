@@ -34,14 +34,17 @@ public class GeneratedConstants {
 	// Instruction pair: photo
 	public final static byte INST_TRIG_PHOT = (byte) 0b10000101;
 	public final static byte INST_TOOK_PHOT = (byte) 0b00000101;
+	// Instruction pair: mode
+	public final static byte INST_SET_MODE = (byte) 0b10000111;
+	public final static byte INST_CNF_MODE = (byte) 0b00000111;
 	// Instruction pair: stop_all
 	public final static byte INST_STOP_ALL = (byte) 0b11111110;
 	public final static byte INST_STPD_ALL = (byte) 0b01111110;
 
-	// Other value:
+	// Other value: stop_all
 	public final static byte START_BYTE = (byte) 0b00000000;
 
-	// Other value: 
+	// Other value: stop_all
 	public final static int MESSAGE_LENGTH = (int) 6;
 
 }
