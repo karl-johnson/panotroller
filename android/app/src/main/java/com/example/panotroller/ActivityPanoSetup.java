@@ -21,6 +21,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
     /* CONSTANTS */
     private final static int MAX_JOY_MOTOR_SPEED = 400;
     private final static int JOY_UPDATE_FREQUENCY = 100; // update frequency of joystick in ms
+    // TODO LIST OF BUILT-IN CAMERAS
+
 
     /* MEMBERS */
     private boolean mShouldUnbind = false;
