@@ -28,23 +28,23 @@ public class GeneratedConstants {
 	// Instruction pair: ustep
 	public final static byte INST_SET_USTEP = (byte) 0b10010000;
 	public final static byte INST_CNF_USTEP = (byte) 0b00010000;
-	// Instruction pair: ping_float
-	public final static byte INST_PING_FLOAT = (byte) 0b10000011;
-	public final static byte INST_PONG_FLOAT = (byte) 0b00000011;
-	// Instruction pair: photo
-	public final static byte INST_TRIG_PHOT = (byte) 0b10000101;
-	public final static byte INST_TOOK_PHOT = (byte) 0b00000101;
 	// Instruction pair: mode
-	public final static byte INST_SET_MODE = (byte) 0b10000111;
-	public final static byte INST_CNF_MODE = (byte) 0b00000111;
+	public final static byte INST_SET_MODE = (byte) 0b10010010;
+	public final static byte INST_CNF_MODE = (byte) 0b00010010;
+	// Instruction pair: photo
+	public final static byte INST_TRIG_PHOT = (byte) 0b10010100;
+	public final static byte INST_TOOK_PHOT = (byte) 0b00010100;
 	// Instruction pair: stop_all
 	public final static byte INST_STOP_ALL = (byte) 0b11111110;
 	public final static byte INST_STPD_ALL = (byte) 0b01111110;
+	// Instruction pair: ping_float
+	public final static byte INST_PING_FLOAT = (byte) 0b10000011;
+	public final static byte INST_PONG_FLOAT = (byte) 0b00000011;
 
-	// Other value: stop_all
+	// Other value: ping_float
 	public final static byte START_BYTE = (byte) 0b00000000;
 
-	// Other value: stop_all
+	// Other value: ping_float
 	public final static int MESSAGE_LENGTH = (int) 6;
 
 }

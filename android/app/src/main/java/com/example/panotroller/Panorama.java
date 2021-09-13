@@ -63,8 +63,8 @@ public class Panorama {
     public float focalLength = 0;
     public float overlap = 0.2f; // desired overlap between tiles in panorama
     // settings which impact timing
-    public float settleTime = 0; // desired settle time after end of move before exposure starts
-    public float exposureTime = 0; // desired still time after exposure triggered before next move
+    public short settleTime = 0; // desired settle time after end of move before exposure starts
+    public short exposureTime = 0; // desired still time after exposure triggered before next move
 
     /* future advanced function - take rows/columns without slowing down for each photo.
        in this case, we send single instructions for entire lines of photos as the timing for this
@@ -162,11 +162,26 @@ public class Panorama {
         return out;
     }
 
-    public List<BluetoothInstruction> generateInstructionList() {
-        // TODO - generates a list of instructions that will acquire panorama if executed in order
+    public List<BluetoothInstruction> generateInstructionList(PositionConverter converterIn) {
+        // generates a list of instructions that will acquire panorama if executed in order
+        // requires a PositionConverter implementation to convert degrees to stepper motor positions
         List<BluetoothInstruction> out = new ArrayList<BluetoothInstruction>();
-        // blah blah blah iterate through generateTiles and convert these into instructions
-        // this requires conversions to relative stepper motor coordinates in steps - yuck!
+        List<PointF> tiles = generateTiles();
+        // first instruction in acquisition is changing mode of motors to point-by-point
+        out.add(new BluetoothInstruction(GeneratedConstants.INST_SET_MODE, (short) 1, (short) 0));
+        // iterate through tiles and convert these into instructions for moving + taking photos
+        Point convertedPosition;
+        for(PointF tile : tiles) {
+            // convert tile's position in degrees to position in steps of motors
+            convertedPosition = converterIn.convertDegreesToSteps(tile);
+            // instruction to move to position
+            // TODO WARN ABOUT 16-bit overflow or handle in a smart way
+            out.add(new BluetoothInstruction(GeneratedConstants.INST_MOVE_ABS,
+                    (short) convertedPosition.x, (short) convertedPosition.y));
+            // instruction to take photo, which includes settling and exposure time
+            out.add(new BluetoothInstruction(GeneratedConstants.INST_TRIG_PHOT,
+                    exposureTime, settleTime));
+        }
         return out;
     }
 
