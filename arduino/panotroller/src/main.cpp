@@ -25,6 +25,8 @@
 // so if we don't get a set speed command for this amount of time, stop motors
 #define MOTOR_TIMEOUT 1000 // (ms)
 
+#define DEFAULT_SHUTTER_SPEED 100
+
 
 /* GLOBAL VARIABLES */
 // communication variables
@@ -44,6 +46,10 @@ bool isPointMode = false;
 // timeout for setting speed to prevent runaway on dropped connection
 unsigned long lastSetSpeedTimer = 0;
 void runMotors();
+
+
+// is the Android currently waiting for us to finish a move?
+bool isOutstandingMove = false;
 
 AccelStepper stepperX(AccelStepper::DRIVER, X_STEP, X_DIR);
 AccelStepper stepperY(AccelStepper::DRIVER, Y_STEP, Y_DIR);
@@ -129,6 +135,17 @@ void loop() {
 
 void runMotors() {
   if(isPointMode) {
+    if(!stepperX.isRunning() && !stepperY.isRunning()) {
+      // motors are not currently running to a target
+      if(isOutstandingMove) {
+        // we just finished a move
+        isOutstandingMove = false;
+        BluetoothInstruction(
+          INST_MOVD_ABS,
+          stepperX.currentPosition(),
+          stepperY.currentPosition()).send(&bluetooth);
+      }
+    }
     stepperX.run();
     stepperY.run();
   }
@@ -159,30 +176,71 @@ void executeInstruction(BluetoothInstruction in) {
         //Serial.print(in.intValue2, HEX);
         BluetoothInstruction(INST_PONG_INT,in.intValue1,in.intValue2).send(&bluetooth);
         break;
-      case INST_PING_FLOAT:
-        BluetoothInstruction(INST_PONG_FLOAT,in.floatValue).send(&bluetooth);
-        break;
       case INST_SET_MODE:
         isPointMode = (bool) in.intValue1; // unnecesary cast for clarity
         BluetoothInstruction(INST_CNF_MODE,in.floatValue).send(&bluetooth);
       case INST_SET_MTR:
         stepperX.setSpeed(latestInstruction.intValue1);
         stepperY.setSpeed(latestInstruction.intValue2);
+        /*
         Serial.print("Got speeds ");
         Serial.print(latestInstruction.intValue1);
         Serial.print(" ");
-        Serial.println(latestInstruction.intValue2);
+        Serial.println(latestInstruction.intValue2);*/
         lastSetSpeedTimer = millis(); // update
+        break;
+      case INST_MOVE_ABS:
+        stepperX.moveTo(in.intValue1);
+        stepperY.moveTo(in.intValue2);
+        isOutstandingMove = true;
+        break;
+      case INST_GET_POS:
+        BluetoothInstruction(INST_GOT_POS,
+          stepperX.currentPosition(),
+          stepperY.currentPosition()).send(&bluetooth);
+        break;
+      case INST_TRIG_PHOT:
+        // for now use blocking delays during shutter command TODO
+        if(in.intValue2) {
+          setLedColor(0xff0000); // show red during settle time
+          delay(in.intValue2); // settle time
+        }
+        setLedColor(0x0000ff);
+        digitalWrite(SHUTTER, HIGH);
+        if(in.intValue1 < DEFAULT_SHUTTER_SPEED) {
+          delay(DEFAULT_SHUTTER_SPEED);
+        }
+        else {
+          delay(in.intValue1);
+        }
+        digitalWrite(SHUTTER, LOW);
+        setLedColor(0);
+        BluetoothInstruction(INST_TOOK_PHOT,in.intValue1,in.intValue2).send(&bluetooth);
+        break;
+      case INST_HOME_POS:
+        stepperX.setCurrentPosition(in.intValue1);
+        stepperY.setCurrentPosition(in.intValue2);
+        BluetoothInstruction(INST_HOMD_POS,
+          stepperX.currentPosition(),
+          stepperY.currentPosition()).send(&bluetooth);
+        break;
+      case INST_SET_USTEP:
+        // sets microsteps and zeros stepper counters (they're meaningless now)
+        setMicrostep(in.intValue1);
+        stepperX.setCurrentPosition(0);
+        stepperY.setCurrentPosition(0);
+        BluetoothInstruction(INST_CNF_USTEP,in.intValue1,in.intValue2).send(&bluetooth);
         break;
       case INST_SET_LED:
         // construct hex color code from 2 ints
-        setLedColor(
-          (((unsigned long) in.intValue1) << 16) || in.intValue2
-        );
+        setLedColor((((unsigned long) in.intValue1) << 16) | in.intValue2);
         BluetoothInstruction(INST_CNF_LED,in.intValue1,in.intValue2).send(&bluetooth);
         break;
       default:
         Serial.println("Unhandled int instruction");
+        setLedColor(0xff0000);
+        delay(500);
+        setLedColor(0);
     }
   }
   /*

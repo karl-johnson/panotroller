@@ -11,6 +11,6 @@ void setLedColor(unsigned long);
 
 void updateRx(SoftwareSerial*, byte*, bool*);
 
-
+bool setMicrostep(int);
 
 #endif

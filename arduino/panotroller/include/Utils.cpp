@@ -46,3 +46,28 @@ void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
     // if we're not in a message or at the start of one, discard byte
   }
 }
+
+bool setMicrostep(int microstep) {
+  // ugly but fast microstep decoding for A3967
+  switch(microstep) {
+    case 1:
+      digitalWrite(MS1, LOW);
+      digitalWrite(MS2, LOW);
+      break;
+    case 2:
+      digitalWrite(MS1, HIGH);
+      digitalWrite(MS2, LOW);
+      break;
+    case 4:
+      digitalWrite(MS1, LOW);
+      digitalWrite(MS2, HIGH);
+      break;
+    case 8:
+      digitalWrite(MS1, HIGH);
+      digitalWrite(MS2, HIGH);
+      break;
+    default:
+      return false;
+  }
+  return true;
+}

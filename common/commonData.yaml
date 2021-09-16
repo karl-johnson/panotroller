@@ -61,7 +61,7 @@
         # move motors to this absolute position with accels
         android_string: "INST_MOVE_ABS"
         android_code: "0b10001110"
-        arduino_string: "INST_MOVD_ABD"
+        arduino_string: "INST_MOVD_ABS"
         arduino_code: "0b00001110"
     - ustep:
         # set motor microstepping
