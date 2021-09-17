@@ -7,7 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -80,13 +82,10 @@ public class ActivityPanoSetup extends AppCompatActivity {
             Log.d("SERVICE_CONNECTED","BT Service Connected");
 
             // start Bluetooth Bar's 1-second interval self-updating clock
-            mBluetoothBar.beginUpdates(mBluetoothService);
             setJoystickListeners();
         }
         @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mBluetoothBar.stopUpdates();
-        }
+        public void onServiceDisconnected(ComponentName arg0) {}
     };
 
     /* JOYSTICK METHODS */
@@ -130,5 +129,17 @@ public class ActivityPanoSetup extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.pano_setup_menu, menu);
         return true;
+    }
+
+    /* HANDLER - DETERMINES WHAT WE DO WITH AN INCOMING MESSAGE FROM BLUETOOTH SERVICE */
+    class PanoSetupHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            // any new status or instruction in gives us reason to update status bar
+            // may want to add a timer in the future as to prevent this from happening too much
+            if(msg.what == BluetoothService.CONN_STATUS_UPDATED || msg.what == BluetoothService.NEW_INSTRUCTION_IN) {
+                mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
+            }
+        }
     }
 }

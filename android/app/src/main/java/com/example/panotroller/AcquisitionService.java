@@ -18,7 +18,16 @@ import java.util.ListIterator;
 
 public class AcquisitionService extends Service {
     // executes a list of BluetoothInstructions to perform an acquisition
-    // also displays a status notification that shows progress bar and allows pause/play
+    // also, if provided a Handler, will send updates about acquisition (and all BluetoothService
+    // ... handler messages)
+    // TODO also displays a status notification that shows progress bar and allows pause/play
+
+    /* CONSTANTS */
+    // constants for acquisition activity we're going to be sending messages to
+    public final static int ACQUISITION_STATUS_UPDATE = 1;
+    public final static int BLUETOOTH_STATUS_UPDATE = 2; // includes latency
+    // will need to include position updates here in the future, if we want the viewport to work
+
 
     /* MEMBERS */
     // for bluetooth service
@@ -28,16 +37,21 @@ public class AcquisitionService extends Service {
     List<BluetoothInstruction> instructionList;
     ListIterator<BluetoothInstruction> instructionListIterator;
     BluetoothInstruction lastSentInstruction = null;
+    Handler mExternalHandler;
 
     private boolean isRunning = true; // tracks pause/resumed
+    public boolean isRunning() {return isRunning;}
     private boolean isWaitingForResponse = false;
+    private boolean isFinished = false;
+    public boolean isFinished() {return isFinished;}
 
     // the binder has to do with how this Service is "bound" to each client which uses it
     private final IBinder binder = new AcquisitionService.LocalBinder();
 
-    public AcquisitionService(List<BluetoothInstruction> listIn) {
+    public AcquisitionService(List<BluetoothInstruction> listIn, Handler handlerIn) {
         instructionList = listIn;
         instructionListIterator = instructionList.listIterator();
+        mExternalHandler = handlerIn;
     }
 
     /* PUBLIC METHODS */
@@ -69,12 +83,16 @@ public class AcquisitionService extends Service {
     };
 
     public void resumeAcquisition() {
-        isRunning = true;
-        updateAcquisition();
+        if(!isRunning) { // only do things if we're not running
+            isRunning = true;
+            updateAcquisition();
+        }
     }
 
     public void pauseAcquisition() {
-        isRunning = false;
+        if(isRunning) {
+            isRunning = false;
+        }
     }
 
     private void updateAcquisition() {
@@ -85,13 +103,23 @@ public class AcquisitionService extends Service {
                 lastSentInstruction = instructionListIterator.next();
                 mBluetoothService.sendInstructionViaThread(lastSentInstruction);
                 isWaitingForResponse = true;
+
             }
             else {
-                // acquisition is done! automatically pause it
-                // TODO add logic to close service
+                // acquisition is done! update accordingly
                 isRunning = false;
+                isFinished = true;
             }
+            // an update was executed so notify client
+            mExternalHandler.obtainMessage(ACQUISITION_STATUS_UPDATE).sendToTarget();
         }
+    }
+
+    public void restartAcquisition() {
+        instructionListIterator = instructionList.listIterator();
+        isFinished = false;
+        isRunning = true;
+        updateAcquisition();
     }
 
     public float getProgress() {
@@ -133,6 +161,9 @@ public class AcquisitionService extends Service {
                     // TODO HANDLE CORRUPTED INSTRUCTIONS (THIS IS WHERE IT WILL MATTER THE MOST)
                     break;
             }
+            // pretty safe to update bluetooth bar anytime this happens
+            mExternalHandler.obtainMessage(
+                    BLUETOOTH_STATUS_UPDATE, mBluetoothService.getBluetoothBarInfo()).sendToTarget();
         }
     }
 }

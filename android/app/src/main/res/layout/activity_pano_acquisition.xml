@@ -84,11 +84,13 @@
 
     <TextView
         android:id="@+id/pano_acq_progressbar_text"
-        android:layout_width="90dp"
+        android:layout_width="100dp"
         android:layout_height="0dp"
-        android:background="@color/green_accent"
+        android:background="@color/lighter_grey"
+        android:ellipsize="end"
         android:gravity="center"
-        android:text="Progress"
+        android:lines="1"
+        android:text="Loading..."
         android:textColor="@color/black"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/pano_acq_remaining_text"
@@ -112,6 +114,7 @@
             android:background="@drawable/round_button"
             android:contentDescription="Pause Panorama Acquisition"
             android:padding="4dp"
+            android:visibility="invisible"
             app:srcCompat="@drawable/ic_baseline_skip_previous" />
 
         <ImageButton
@@ -121,10 +124,11 @@
             android:background="@drawable/round_button"
             android:contentDescription="Pause Panorama Acquisition"
             android:padding="4dp"
+            android:visibility="invisible"
             app:srcCompat="@drawable/ic_baseline_fast_rewind" />
 
         <ImageButton
-            android:id="@+id/pause"
+            android:id="@+id/pause_play"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/round_button"
@@ -139,6 +143,7 @@
             android:background="@drawable/round_button"
             android:contentDescription="Pause Panorama Acquisition"
             android:padding="4dp"
+            android:visibility="invisible"
             app:srcCompat="@drawable/ic_baseline_fast_forward" />
 
         <ImageButton
@@ -148,6 +153,7 @@
             android:background="@drawable/round_button"
             android:contentDescription="Pause Panorama Acquisition"
             android:padding="4dp"
+            android:visibility="invisible"
             app:srcCompat="@drawable/ic_baseline_skip_next" />
     </LinearLayout>
 

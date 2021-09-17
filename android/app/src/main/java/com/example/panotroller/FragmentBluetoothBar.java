@@ -55,7 +55,7 @@ public class FragmentBluetoothBar extends Fragment {
     public void onStop() {
         super.onStop();
         Log.d("TAG", "Fragment onStop()");
-        stopUpdates();
+        //stopUpdates();
     }
 
     // Launch bluetooth config activity when anywhere in the fragment is pressed
@@ -64,8 +64,9 @@ public class FragmentBluetoothBar extends Fragment {
         startActivity(intent);
         // no need to pass any bluetooth data, as it's all handled by Bluetooth Service
     }
-
+/*
     public void beginUpdates(BluetoothService serviceIn) {
+        // TODO deprecate
         // start updating bar every UPDATE_FREQUENCY ms
         Log.d("BT_BAR", "Begin Updates Called");
         if(mUpdatesStarted) return; // don't post more to handler if we're already updating
@@ -89,7 +90,7 @@ public class FragmentBluetoothBar extends Fragment {
         updateHandler.removeCallbacksAndMessages(null);
         mUpdatesStarted = false;
     }
-
+*/
     // Update bar status using the given information pulled from the bt. service
     @SuppressLint("SetTextI18n")
     public void update(BluetoothService.BluetoothBarInfo in) {
@@ -110,7 +111,7 @@ public class FragmentBluetoothBar extends Fragment {
                     mTextView.setText("Connecting...");
                     break;
                 case BluetoothService.STATUS_CONNECTED:
-                    mTextView.setBackgroundColor(getContext().getColor(R.color.connected));
+                    mTextView.setBackgroundColor(getContext().getColor(R.color.blue_connected));
                     mTextView.setText("Connected (" + in.latency + "ms)");
                     break;
             }

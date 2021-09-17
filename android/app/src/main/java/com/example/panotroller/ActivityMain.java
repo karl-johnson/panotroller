@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 
@@ -97,18 +99,28 @@ public class ActivityMain extends AppCompatActivity {
             mBluetoothService = binder.getService();
             Log.d("SERVICE_CONNECTED","BT Service Connected");
 
-            // start Bluetooth Bar's 1-second interval self-updating clock
-            mBluetoothBar.beginUpdates(mBluetoothService);
+            // start Bluetooth Bar's 1-second interval self-updating clock TODO deprecate!!!!
+            // mBluetoothBar.beginUpdates(mBluetoothService);
         }
         @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mBluetoothBar.stopUpdates();
-        }
+        public void onServiceDisconnected(ComponentName arg0) {}
     };
 
 
     public void launchPanoSetup(View view) {
         Intent intent = new Intent(this, ActivityPanoSetup.class);
         startActivity(intent);
+    }
+
+    /* HANDLER - DETERMINES WHAT WE DO WITH AN INCOMING MESSAGE FROM BLUETOOTH SERVICE */
+    class MainActivityHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            // any new status or instruction in gives us reason to update status bar
+            // may want to add a timer in the future as to prevent this from happening too much
+            if(msg.what == BluetoothService.CONN_STATUS_UPDATED || msg.what == BluetoothService.NEW_INSTRUCTION_IN) {
+                mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
+            }
+        }
     }
 }

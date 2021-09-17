@@ -35,6 +35,7 @@ public class PanographPositionConverter extends PositionConverter {
     public void setOrigin(PointF newOrigin) {origin = newOrigin;}
 
     // TODO: ON-THE-FLY MICROSTEPPING CHANGES - may need to move this class to scope w/ BTService
+    // simply send instruction to change microstep and zero origin to current position
 
     // simple linear conversions
     public Point convertDegreesToSteps(PointF posDegrees) {
