@@ -102,3 +102,7 @@
     type: "int"
     string: "MESSAGE_LENGTH"
     code: "6"
+  default_microstep:
+    type: "int"
+    string: "DEFAULT_MICROSTEP"
+    code: "8"

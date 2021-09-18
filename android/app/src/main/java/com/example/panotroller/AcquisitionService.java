@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -34,59 +35,47 @@ public class AcquisitionService extends Service {
     private boolean mShouldUnbind = false;
     private BluetoothService mBluetoothService;
     // specific to this service
-    List<BluetoothInstruction> instructionList;
-    ListIterator<BluetoothInstruction> instructionListIterator;
+    List<BluetoothInstruction> instructionList = null;
+    ListIterator<BluetoothInstruction> instructionListIterator = null;
     BluetoothInstruction lastSentInstruction = null;
     Handler mExternalHandler;
 
+    private boolean isEnabled = false; // have we been given an instruction list?
+    public boolean isEnabled() {return isEnabled;}
     private boolean isRunning = true; // tracks pause/resumed
     public boolean isRunning() {return isRunning;}
     private boolean isWaitingForResponse = false;
     private boolean isFinished = false;
     public boolean isFinished() {return isFinished;}
 
-    // the binder has to do with how this Service is "bound" to each client which uses it
-    private final IBinder binder = new AcquisitionService.LocalBinder();
-
-    public AcquisitionService(List<BluetoothInstruction> listIn, Handler handlerIn) {
-        instructionList = listIn;
-        instructionListIterator = instructionList.listIterator();
-        mExternalHandler = handlerIn;
-    }
-
     /* PUBLIC METHODS */
+
     @Override
     public void onCreate() {
+        Toast.makeText(this, "Acquisition service started", Toast.LENGTH_SHORT).show();
         // bind to BluetoothService
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         mShouldUnbind = bindService(
                 BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
-        resumeAcquisition();
     }
 
-    /* SERVICE CONNECTION - NEEDED TO CONNECT TO BLUETOOTH SERVICE */
+    public void enableAcquisition(List<BluetoothInstruction> listIn) {
+        // need to get instruction list in order for us to execute it!
+        instructionList = listIn;
+        instructionListIterator = instructionList.listIterator();
+        isEnabled = true;
+    }
 
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName className,
-                                       IBinder service) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
-            BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
-            mBluetoothService = binder.getService();
-            Log.d("SERVICE_CONNECTED","BT Service Connected");
-            // begin executing instructions
-            isWaitingForResponse = false; // ensure that we're not waiting to start acq.
-            resumeAcquisition();
-        }
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {}
-    };
+    public void setExternalHandler(Handler handlerIn) {mExternalHandler = handlerIn;}
 
-    public void resumeAcquisition() {
-        if(!isRunning) { // only do things if we're not running
+    public boolean resumeAcquisition() {
+        // only do things if we're not running + are enabled
+        if(isEnabled && !isRunning) {
             isRunning = true;
             updateAcquisition();
+            return true;
         }
+        return false; // acquisition didn't resume
     }
 
     public void pauseAcquisition() {
@@ -128,6 +117,11 @@ public class AcquisitionService extends Service {
         return (float) instructionListIterator.nextIndex()/instructionList.size();
     }
 
+    /* STUFF TO ALLOW CLIENTS TO BIND TO US */
+
+    // the binder has to do with how this Service is "bound" to each client which uses it
+    private final IBinder binder = new AcquisitionService.LocalBinder();
+
     public class LocalBinder extends Binder {
         AcquisitionService getService() {
             return AcquisitionService.this;
@@ -138,7 +132,25 @@ public class AcquisitionService extends Service {
         return binder;
     }
 
+    /* SERVICE CONNECTION - NEEDED TO CONNECT TO BLUETOOTH SERVICE */
+
+    private ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
+            mBluetoothService = binder.getService();
+            Log.d("SERVICE_CONNECTED","BT Service Connected");
+            // begin executing instructions
+            isWaitingForResponse = false; // ensure that we're not waiting to start acq.
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {}
+    };
+
     /* HANDLER - DETERMINES WHAT WE DO WITH AN INCOMING MESSAGE FROM BLUETOOTH SERVICE */
+
     class AcquisitionServiceHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {

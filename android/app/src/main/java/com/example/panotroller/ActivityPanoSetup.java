@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,6 +17,9 @@ import android.view.MenuItem;
 
 import androidx.appcompat.widget.Toolbar;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 public class ActivityPanoSetup extends AppCompatActivity {
@@ -25,10 +29,16 @@ public class ActivityPanoSetup extends AppCompatActivity {
     private final static int JOY_UPDATE_FREQUENCY = 100; // update frequency of joystick in ms
     // TODO LIST OF BUILT-IN CAMERAS
 
+    // DEBUG: HARDCODED PANORAMA AND CAMERAS
+    private Panorama.PanoramaCamera testCamera = Panorama.builtInCameras.get("CANON_5D_MARK_II");
+    private Panorama testPanorama = new Panorama(new RectF(0,30.0f,30.0f,0));
+    private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
 
     /* MEMBERS */
     private boolean mShouldUnbind = false;
     private BluetoothService mBluetoothService;
+    private Panorama mPanorama = testPanorama; // panorama being edited in this activity
+
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
@@ -80,13 +90,12 @@ public class ActivityPanoSetup extends AppCompatActivity {
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
             Log.d("SERVICE_CONNECTED","BT Service Connected");
-
-            // start Bluetooth Bar's 1-second interval self-updating clock
             setJoystickListeners();
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {}
     };
+
 
     /* JOYSTICK METHODS */
 
@@ -117,12 +126,44 @@ public class ActivityPanoSetup extends AppCompatActivity {
             return true;
         }
         else if(item.getItemId() == R.id.continue_button) {
-            Intent intent = new Intent(this, ActivityPanoAcquisition.class);
-            startActivity(intent);
+            // TODO indicate loading, because this may take noticeable time
+
+            // start acquisition service
+            Intent AcqServiceIntent = new Intent(this, AcquisitionService.class);
+            startService(AcqServiceIntent);
+            // bind to service so we can give it the instruction list
+            mShouldUnbind = bindService(AcqServiceIntent, mAcquisitionServiceConnection, Context.BIND_AUTO_CREATE);
+            // since this binding is asynchronous, the rest of the pano acquisition launching
+            // is found in mAcquisitionServiceConnection.onServiceConnected()
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
+    /* SERVICE CONNECTION - NEEDED TO CONNECT TO ACQUISITION SERVICE */
+
+    private ServiceConnection mAcquisitionServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // This is called in the process of launching the acquisition activity
+            AcquisitionService.LocalBinder binder = (AcquisitionService.LocalBinder) service;
+            AcquisitionService acquisitionService = binder.getService();
+            // now that we've started and bound to the new acquisitionService,
+            // generate instruction list
+            List<BluetoothInstruction> exportInstructionList = mPanorama.generateInstructionList(mPositionConverter);
+            // NOTE: if you're having issues with null instruction list, look here
+            acquisitionService.enableAcquisition(exportInstructionList);
+
+            // launch next activity
+            // TODO THIS MIGHT JUST NOT WORK LMAO
+            Intent intent = new Intent(getApplicationContext(), ActivityPanoAcquisition.class);
+            startActivity(intent);
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {}
+    };
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

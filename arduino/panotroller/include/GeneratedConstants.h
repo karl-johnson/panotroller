@@ -45,5 +45,6 @@ typedef enum {
 
 #define START_BYTE 0b00000000
 #define MESSAGE_LENGTH 6
+#define DEFAULT_MICROSTEP 8
 
 #endif

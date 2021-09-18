@@ -5,7 +5,9 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 // object to define a panorama and export the movements/instructions needed to acquire that panorama
 public class Panorama {
@@ -32,6 +34,17 @@ public class Panorama {
     public final static int CORNER_BOT_LEFT = 2;
     public final static int CORNER_BOT_RIGHT = 3;
 
+    // data from digicamdb.com; TODO experiments to determine frame rate
+    public final static Map<String, PanoramaCamera> builtInCameras;
+    static {
+        builtInCameras = new HashMap<String, PanoramaCamera>() {{
+            put("CANON_5D_MARK_II", new PanoramaCamera("Canon 5D Mark II", 36.0f, 24.0f, 5616, 3744, 1f));
+            put("CANON_6D", new PanoramaCamera("Canon 6D", 36.0f, 24.0f, 5472, 3648, 1f));
+            put("CANON_7D_MARK_II", new PanoramaCamera("Canon 7D Mark II", 22.4f, 15f, 5486, 3682, 1f));
+            put("CANON_40D", new PanoramaCamera("Canon 40D", 22.2f, 14.8f, 3888, 2592, 1f));
+        }};
+    }
+
     /* MEMBERS */
     // list of points to include in panorama (panorama is bounding box)
     private List<PointF> definingPoints = new ArrayList<PointF>();
@@ -54,13 +67,13 @@ public class Panorama {
     public RectF getRegion() {return region;}
 
     // panorama settings members
-    // settings which impact tile generation
+    // settings which impact tile generation (with reasonable defaults)
     public int panoOrder = ORDER_ZIGZAG;
     public int panoDirection = DIRECTION_COLUMN;
     public int panoCorner = CORNER_TOP_LEFT;
-    private boolean is360pano = false;
+    private boolean is360pano = false; // TODO ensure 360 work properly
     public PanoramaCamera camera = null;
-    public float focalLength = 0;
+    public float focalLength = 50;
     public float overlap = 0.2f; // desired overlap between tiles in panorama
     // settings which impact timing
     public short settleTime = 0; // desired settle time after end of move before exposure starts
@@ -72,6 +85,11 @@ public class Panorama {
        if enabled settleTime and exposureTime will be ignored
     */
     // private boolean isContinuousPano = false;
+
+    // DEBUG CONSTRUCTOR
+    Panorama() {};
+
+    Panorama(RectF regionIn) {region = regionIn;}
 
     public void addPoint(PointF in) {
         // TODO WRAP INPUT?
@@ -298,9 +316,10 @@ public class Panorama {
     }
 
     public static class PanoramaCamera {
-        PanoramaCamera(float xS, float yS, int xR, int yR, float fR) {
-            xSize = xS; ySize = yS; xRes = xR; yRes = yR; frameRate = fR;
+        PanoramaCamera(String dN, float xS, float yS, int xR, int yR, float fR) {
+            displayName = dN; xSize = xS; ySize = yS; xRes = xR; yRes = yR; frameRate = fR;
         }
+        public final String displayName;
         // the sensor size is used along with the lens being used to space tiles properly
         public final float xSize; // width of the sensor in mm
         public final float ySize; // height of the sensor in
@@ -310,4 +329,7 @@ public class Panorama {
         // frame rate for continuous acquisitions
         public final float frameRate;
     }
+
+
+
 }

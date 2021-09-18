@@ -92,7 +92,7 @@ for item in yaml_list:
                         " = (byte) "+inst['arduino_code']+";\n"])
         java_file.write("\n")
     else:
-        java_file.write("\t// Other value: "+key+"\n")
+        java_file.write("\t// Other value: "+item+"\n")
         java_file.write("\tpublic final static "+item_list['type']+
             " "+item_list['string']+" = ("+item_list['type']+") "+
             item_list['code']+";\n\n")

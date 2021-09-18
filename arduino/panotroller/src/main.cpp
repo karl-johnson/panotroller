@@ -24,6 +24,7 @@
 // if connection drops after a non-zero motor speed is set, motor could runaway
 // so if we don't get a set speed command for this amount of time, stop motors
 #define MOTOR_TIMEOUT 1000 // (ms)
+#define MOTOR_DEFAULT_MICROSTEP 8
 
 #define DEFAULT_SHUTTER_SPEED 100
 
@@ -61,10 +62,16 @@ void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
   bluetooth.begin(HC05_BAUD_RATE);
 
+  // make sure we don't trigger camera on start-up
+  pinMode(SHUTTER, OUTPUT);
+  digitalWrite(SHUTTER, LOW);
+
+  // configure stepper motors
   stepperX.setMaxSpeed(400.0);
   stepperX.setAcceleration(500.0);
   stepperY.setMaxSpeed(400.0);
   stepperY.setAcceleration(500.0);
+  setMicrostep(MOTOR_DEFAULT_MICROSTEP);
 }
 
 void loop() {

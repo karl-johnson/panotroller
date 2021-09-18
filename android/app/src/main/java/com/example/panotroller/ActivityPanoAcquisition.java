@@ -61,13 +61,17 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
 
         // assign actions to buttons
         mPausePlayButton.setOnClickListener(this::onPausePlayButtonPress);
+
     }
 
     public void onResume() {
         super.onResume();
-        Intent BTServiceIntent = new Intent(this, AcquisitionService.class);
-        mShouldUnbind = bindService(
-                BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+        if(!mShouldUnbind) { // if not already bound
+            // bind to acquisition service created in setup activity
+            Intent AcqServiceIntent = new Intent(this, AcquisitionService.class);
+            mShouldUnbind = bindService(
+                    AcqServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     @Override
@@ -115,18 +119,24 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             AcquisitionService.LocalBinder binder = (AcquisitionService.LocalBinder) service;
             mAcquisitionService = binder.getService();
-            Log.d("SERVICE_CONNECTED","BT Service Connected");
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {}
     };
 
-
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // make back button actually go back
         if (item.getItemId() == android.R.id.home) {
+            // TODO show popup about stopping acquisition
+            // TODO stop AcquisitionService
+            // first have to unbind prior to stopping service
+            if (mShouldUnbind) {
+                mShouldUnbind = false;
+                unbindService(mServiceConnection);
+            }
+            stopService(new Intent(this, AcquisitionService.class));
+            // now go to previous activity
             onBackPressed(); // use back button logic to do this for us
             return true;
         }
@@ -162,6 +172,4 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             }
         }
     }
-
-
 }

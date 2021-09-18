@@ -12,15 +12,16 @@ public class PanographPositionConverter extends PositionConverter {
         origin = originIn; microstep = microstepIn;
         updateOutputDegreesPerStep();
     }
-    // mechanical parameters that won't change during program
-    private final float motorSteps = 200f; // steps per rev on stepper motor shaft
-    private final float reduction = 8f; // belt reduction on motors
-
     // conversion parameters that can change
-    private int microstep = 8; // microsteps/full step
+    private int microstep = GeneratedConstants.DEFAULT_MICROSTEP; // microsteps/full step
     private float outputDegreesPerStep = 0; // same for both axes
     private void updateOutputDegreesPerStep() {
-        outputDegreesPerStep = 360f/(motorSteps*microstep*reduction);
+        // mechanical parameters that won't change during program
+        // steps per rev on stepper motor shaft
+        float motorSteps = 200f;
+        // belt reduction on motors
+        float reduction = 8f;
+        outputDegreesPerStep = 360f/(motorSteps *microstep* reduction);
     }
 
     // for microstepping changes we need to be able to know/update convertStepToDegrees(0,0)

@@ -24,7 +24,7 @@ public class GeneratedConstants {
 	public final static byte INST_HOMD_POS = (byte) 0b00001100;
 	// Instruction pair: move
 	public final static byte INST_MOVE_ABS = (byte) 0b10001110;
-	public final static byte INST_MOVD_ABD = (byte) 0b00001110;
+	public final static byte INST_MOVD_ABS = (byte) 0b00001110;
 	// Instruction pair: ustep
 	public final static byte INST_SET_USTEP = (byte) 0b10010000;
 	public final static byte INST_CNF_USTEP = (byte) 0b00010000;
@@ -41,10 +41,13 @@ public class GeneratedConstants {
 	public final static byte INST_PING_FLOAT = (byte) 0b10000011;
 	public final static byte INST_PONG_FLOAT = (byte) 0b00000011;
 
-	// Other value: ping_float
+	// Other value: start_byte
 	public final static byte START_BYTE = (byte) 0b00000000;
 
-	// Other value: ping_float
+	// Other value: message_length
 	public final static int MESSAGE_LENGTH = (int) 6;
+
+	// Other value: default_microstep
+	public final static int DEFAULT_MICROSTEP = (int) 8;
 
 }
