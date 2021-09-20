@@ -28,7 +28,6 @@
 
 #define DEFAULT_SHUTTER_SPEED 100
 
-
 /* GLOBAL VARIABLES */
 // communication variables
 bool isConnectionVerified = false;

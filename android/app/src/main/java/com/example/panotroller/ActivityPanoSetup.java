@@ -91,6 +91,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
             mBluetoothService = binder.getService();
             mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
             Log.d("SERVICE_CONNECTED","BT Service Connected");
+            // set to velocity mode
+            mBluetoothService.sendInstructionViaThread(new BluetoothInstruction(GeneratedConstants.INST_SET_MODE,(short) 0, (short) 0));
             setJoystickListeners();
         }
         @Override

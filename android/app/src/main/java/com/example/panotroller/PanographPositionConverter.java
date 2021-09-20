@@ -20,8 +20,8 @@ public class PanographPositionConverter extends PositionConverter {
         // steps per rev on stepper motor shaft
         float motorSteps = 200f;
         // belt reduction on motors
-        float reduction = 8f;
-        outputDegreesPerStep = 360f/(motorSteps *microstep* reduction);
+        float reduction = 5f;
+        outputDegreesPerStep = (float) ((2*Math.PI)/(motorSteps*microstep* reduction));
     }
 
     // for microstepping changes we need to be able to know/update convertStepToDegrees(0,0)

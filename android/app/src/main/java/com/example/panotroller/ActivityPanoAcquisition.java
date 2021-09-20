@@ -92,6 +92,9 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
         if(mAcquisitionService.isFinished()) {
             // if our acquisition service is finished, play button should restart it
             mAcquisitionService.restartAcquisition();
+            // we're now running so change to pause button and blue bar
+            mPausePlayButton.setImageResource(R.drawable.ic_baseline_pause);
+            mProgressBarText.setBackgroundColor(getColor(R.color.blue_connected));
         }
         else {
             if(mAcquisitionService.isRunning()) {

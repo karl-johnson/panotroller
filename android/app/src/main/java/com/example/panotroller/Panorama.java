@@ -67,12 +67,12 @@ public class Panorama {
     // NOTE RectF sign convention has (+,+) corner as BOTTOM right! (common image coordinate conv.)
     private RectF region;
     public RectF getRegion() {return region;}
-
+    // TODO test all sign convention things to ensure they're correct
     // panorama settings members
     // settings which impact tile generation (with reasonable defaults)
     public int panoOrder = ORDER_ZIGZAG;
     public int panoDirection = DIRECTION_COLUMN;
-    public int panoCorner = CORNER_TOP_LEFT;
+    public int panoCorner = CORNER_BOT_RIGHT;
     private boolean is360pano = false; // TODO ensure 360 work properly
     public PanoramaCamera camera = builtInCameras.get("CANON_5D_MARK_II");
     public float focalLength = 50;
@@ -121,6 +121,7 @@ public class Panorama {
     }
 
     public List<PointF> generateTiles() {
+        // note - sign conventions get messy here, but it works so I'm not going to bother
         Log.d("PANORAMA", "Generate tiles called with region " + region.toString());
         Log.d("PANORAMA", "Generate tiles called with region size + (" + region.width() + "x" + region.height() + ")");
         // TODO input sanitation
@@ -151,22 +152,22 @@ public class Panorama {
         // now we have to do case-by-case parameters
         // due to helper functions, all we have to do are play with signs of things
         switch(panoCorner) { // all corner information encoded in origin and spacing vectors
-            case CORNER_BOT_LEFT:
+            case CORNER_TOP_LEFT:
                 tileOrigin.y = region.top + tileOriginShift.y;
                 tileOrigin.x = region.left - tileOriginShift.x;
-                tileDelta.y*=-1; // flip sign of spacing so vector points up (negative y)
+                tileDelta.y*=-1; // flip sign of spacing so vector points down (negative y)
                 break;
-            case CORNER_BOT_RIGHT:
+            case CORNER_TOP_RIGHT:
                 tileOrigin.y = region.top + tileOriginShift.y;
                 tileOrigin.x = region.right + tileOriginShift.x;
                 tileDelta.x*=-1; tileDelta.y*=-1; // flip more signs etc.
                 break;
-            case CORNER_TOP_LEFT:
+            case CORNER_BOT_LEFT:
                 tileOrigin.y = region.bottom - tileOriginShift.y;
                 tileOrigin.x = region.left - tileOriginShift.x;
-                // no need to flip any here - starting in top left so both deltas are positive
+                // no need to flip any here - both deltas are positive
                 break;
-            case CORNER_TOP_RIGHT:
+            case CORNER_BOT_RIGHT:
                 tileOrigin.y = region.bottom - tileOriginShift.y;
                 tileOrigin.x = region.right + tileOriginShift.x;
                 tileDelta.x*=-1;
