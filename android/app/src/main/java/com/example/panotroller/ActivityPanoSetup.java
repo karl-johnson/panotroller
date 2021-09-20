@@ -26,12 +26,12 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     /* CONSTANTS */
     private final static int MAX_JOY_MOTOR_SPEED = 400;
-    private final static int JOY_UPDATE_FREQUENCY = 100; // update frequency of joystick in ms
+    private final static int JOY_UPDATE_FREQUENCY = 100; // update period of joystick in ms
     // TODO LIST OF BUILT-IN CAMERAS
 
     // DEBUG: HARDCODED PANORAMA AND CAMERAS
     private Panorama.PanoramaCamera testCamera = Panorama.builtInCameras.get("CANON_5D_MARK_II");
-    private Panorama testPanorama = new Panorama(new RectF(0,30.0f,30.0f,0));
+    private Panorama testPanorama = new Panorama(new RectF(0, 0, (float) (Math.PI/2.0f), (float) (Math.PI/4.0f)));
     private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
 
     /* MEMBERS */
@@ -89,6 +89,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
+            mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
             Log.d("SERVICE_CONNECTED","BT Service Connected");
             setJoystickListeners();
         }
@@ -127,7 +128,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         }
         else if(item.getItemId() == R.id.continue_button) {
             // TODO indicate loading, because this may take noticeable time
-
+            Log.d("ACQUISITION_SETUP", "Starting Acquisition service...");
             // start acquisition service
             Intent AcqServiceIntent = new Intent(this, AcquisitionService.class);
             startService(AcqServiceIntent);
@@ -146,6 +147,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
+            Log.d("ACQUISITION_SETUP", "Acquisition service connected");
             // This is called in the process of launching the acquisition activity
             AcquisitionService.LocalBinder binder = (AcquisitionService.LocalBinder) service;
             AcquisitionService acquisitionService = binder.getService();
@@ -157,6 +159,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
             // launch next activity
             // TODO THIS MIGHT JUST NOT WORK LMAO
+            Log.d("ACQUISITION_SETUP", "Attempting to launch acquisition activity");
             Intent intent = new Intent(getApplicationContext(), ActivityPanoAcquisition.class);
             startActivity(intent);
         }

@@ -15,15 +15,21 @@ import android.os.Message;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
 public class ActivityPanoAcquisition extends AppCompatActivity {
 
+    /* CONSTANTS */
+    // at zero progress use non-zero progress bar width for readable percentage
+    private final static int ZERO_PROGRESS_BAR_WIDTH = 32;
+
     /* MEMBERS */
     private boolean mShouldUnbind = false;
     private AcquisitionService mAcquisitionService;
+    private Handler mAcquisitionHandler = new PanoAcquisitionHandler();
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
@@ -49,10 +55,6 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
         mProgressBarText = (TextView) findViewById(R.id.pano_acq_progressbar_text);
         mPausePlayButton = (ImageButton) findViewById(R.id.pause_play);
 
-        // default view configuration that can't be done in xml
-        // e.g. set progress bar to 100% until we're connected to Acquisition service
-        mProgressBarText.setWidth(mProgressBar.getWidth());
-
         // toolbar setup
         setTitle("Panorama Acquisition");
         Toolbar thisToolbar = (Toolbar) findViewById(R.id.pano_acq_toolbar);
@@ -61,7 +63,6 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
 
         // assign actions to buttons
         mPausePlayButton.setOnClickListener(this::onPausePlayButtonPress);
-
     }
 
     public void onResume() {
@@ -72,6 +73,9 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             mShouldUnbind = bindService(
                     AcqServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
         }
+        // default view configuration that can't be done in xml
+        // e.g. set progress bar to 100% until we're connected to Acquisition service
+        // setProgressBarWidth(mProgressBar.getWidth());
     }
 
     @Override
@@ -93,12 +97,16 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             if(mAcquisitionService.isRunning()) {
                 // the acquisition is running so we need to pause it and update button to "play"
                 mAcquisitionService.pauseAcquisition();
-                mPausePlayButton.setBackground(getDrawable(R.drawable.ic_baseline_play_arrow));
+                mPausePlayButton.setImageResource(R.drawable.ic_baseline_play_arrow);
+                // also update progress bar color
+                mProgressBarText.setBackgroundColor(getColor(R.color.orange_connecting));
             }
             else {
                 // the acquisition is paused so we need to start it and update button to "pause"
                 mAcquisitionService.resumeAcquisition();
-                mPausePlayButton.setBackground(getDrawable(R.drawable.ic_baseline_pause));
+                mPausePlayButton.setImageResource(R.drawable.ic_baseline_pause);
+                // also update progress bar color
+                mProgressBarText.setBackgroundColor(getColor(R.color.blue_connected));
             }
         }
     }
@@ -119,6 +127,9 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             AcquisitionService.LocalBinder binder = (AcquisitionService.LocalBinder) service;
             mAcquisitionService = binder.getService();
+            mAcquisitionService.setExternalHandler(mAcquisitionHandler);
+            // Update bluetooth bar using acquisition service bt bar passthrough method
+            mBluetoothBar.update(mAcquisitionService.getBluetoothBarInfo());
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {}
@@ -152,18 +163,15 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
                 case AcquisitionService.ACQUISITION_STATUS_UPDATE:
                     if(mAcquisitionService.isFinished()) {
                         // update UI to indicate panorama is finished
-                        mProgressBarText.setWidth(mProgressBar.getWidth());
-                        mProgressBarText.setBackgroundColor(getColor(R.color.blue_connected));
+                        setProgressBarWidth(mProgressBar.getWidth());
+                        mProgressBarText.setBackgroundColor(getColor(R.color.green_accent));
                         mProgressBarText.setText("Acquisition Complete");
                         // also set play button to look like a replay button
-                        mPausePlayButton.setBackground(getDrawable(R.drawable.ic_baseline_replay));
+                        mPausePlayButton.setImageResource(R.drawable.ic_baseline_replay);
                     }
                     else {
                         // update progress bar and text fields with normal progress
-                        float newProgress = mAcquisitionService.getProgress();
-                        mProgressBarText.setWidth((int) newProgress*mProgressBar.getWidth());
-                        int newProgressPercent = (int) (100*newProgress);
-                        mProgressBarText.setText(newProgressPercent + "%");
+                        setProgressBarPercent(mAcquisitionService.getProgress());
                     }
                     break;
                 case AcquisitionService.BLUETOOTH_STATUS_UPDATE:
@@ -171,5 +179,21 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
                     break;
             }
         }
+    }
+
+    /* HELPER METHODS */
+    private void setProgressBarPercent(float percentIn) {
+        // change progress bar width and text based on percentage
+        setProgressBarWidth((int) (ZERO_PROGRESS_BAR_WIDTH + percentIn*(mProgressBar.getWidth() - ZERO_PROGRESS_BAR_WIDTH)));
+        mProgressBarText.setText((int) (100*percentIn) + "%");
+    }
+
+    private void setProgressBarWidth(int newWidth) {
+        // apparently setWidth is dumb and stupid so
+        // Log.d("ACQUISITION", "Total progress bar width: " + mProgressBar.getWidth());
+        // Log.d("ACQUISITION", "Setting progress bar width to " + newWidth);
+        ViewGroup.LayoutParams newParams = mProgressBarText.getLayoutParams();
+        newParams.width = newWidth;
+        mProgressBarText.setLayoutParams(newParams);
     }
 }

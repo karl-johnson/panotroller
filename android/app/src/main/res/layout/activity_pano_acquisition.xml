@@ -46,7 +46,6 @@
         android:textColor="@color/green_accent"
         app:layout_constraintBottom_toTopOf="@+id/pano_acq_viewer"
         app:layout_constraintEnd_toEndOf="@+id/pano_acq_viewer" />
-
     <View
         android:id="@+id/pano_acq_viewer"
         android:layout_width="0dp"
@@ -60,6 +59,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/pano_acq_photos_text" />
 
+    <!--
     <View
         android:id="@+id/pano_acq_progressbar"
         android:layout_width="0dp"
@@ -69,7 +69,31 @@
         android:background="@color/light_grey"
         app:layout_constraintBottom_toTopOf="@+id/pano_acq_remaining_text"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent" />-->
+
+    <FrameLayout
+        android:id="@+id/pano_acq_progressbar"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@color/light_grey"
+        app:layout_constraintBottom_toTopOf="@+id/pano_acq_remaining_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/pano_acq_progressbar_text"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/lighter_grey"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:lines="1"
+            android:text="Press play to begin acquisition..."
+            android:textColor="@color/black"
+            android:textStyle="bold" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/pano_acq_remaining_text"
@@ -81,21 +105,6 @@
         app:layout_constraintBottom_toTopOf="@+id/linearLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/pano_acq_progressbar_text"
-        android:layout_width="100dp"
-        android:layout_height="0dp"
-        android:background="@color/lighter_grey"
-        android:ellipsize="end"
-        android:gravity="center"
-        android:lines="1"
-        android:text="Loading..."
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/pano_acq_remaining_text"
-        app:layout_constraintStart_toStartOf="@+id/pano_acq_progressbar"
-        app:layout_constraintTop_toTopOf="@+id/pano_acq_progressbar" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -134,7 +143,7 @@
             android:background="@drawable/round_button"
             android:contentDescription="Pause Panorama Acquisition"
             android:padding="4dp"
-            app:srcCompat="@drawable/ic_baseline_pause" />
+            app:srcCompat="@drawable/ic_baseline_play_arrow" />
 
         <ImageButton
             android:id="@+id/pano_acq_skip_forward"

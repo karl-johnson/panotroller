@@ -101,6 +101,7 @@ public class ActivityMain extends AppCompatActivity {
 
             // start Bluetooth Bar's 1-second interval self-updating clock TODO deprecate!!!!
             // mBluetoothBar.beginUpdates(mBluetoothService);
+            mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {}

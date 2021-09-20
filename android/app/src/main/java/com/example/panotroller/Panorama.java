@@ -3,6 +3,7 @@ package com.example.panotroller;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,6 +64,7 @@ public class Panorama {
      space our frame azimuth values out over the 360 degrees, respecting overlap, focal length, etc.
      This is why 360's are handled differently at the tile generation stage
      */
+    // NOTE RectF sign convention has (+,+) corner as BOTTOM right! (common image coordinate conv.)
     private RectF region;
     public RectF getRegion() {return region;}
 
@@ -72,7 +74,7 @@ public class Panorama {
     public int panoDirection = DIRECTION_COLUMN;
     public int panoCorner = CORNER_TOP_LEFT;
     private boolean is360pano = false; // TODO ensure 360 work properly
-    public PanoramaCamera camera = null;
+    public PanoramaCamera camera = builtInCameras.get("CANON_5D_MARK_II");
     public float focalLength = 50;
     public float overlap = 0.2f; // desired overlap between tiles in panorama
     // settings which impact timing
@@ -119,6 +121,8 @@ public class Panorama {
     }
 
     public List<PointF> generateTiles() {
+        Log.d("PANORAMA", "Generate tiles called with region " + region.toString());
+        Log.d("PANORAMA", "Generate tiles called with region size + (" + region.width() + "x" + region.height() + ")");
         // TODO input sanitation
         // generates a list of tiles which span panorama region according to setting members
         List<PointF> out = new ArrayList<PointF>();
@@ -129,12 +133,15 @@ public class Panorama {
         // and thus what corner the origin is
         PointF tileDelta = new PointF();
         Point tileNum = new Point(); // number of tiles in each direction
-        tileDelta.x = (float) Math.atan2(camera.xSize/2,focalLength) * (1-overlap);
-        tileDelta.y = (float) Math.atan2(camera.ySize/2,focalLength) * (1-overlap);
+        // trig to compute AOV + reduce delta by desired overlap
+        Log.d("PANORAMA", "Focal length " + focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
+        tileDelta.x = 2.0f * (float) Math.atan2(camera.xSize/2,focalLength) * (1.0f-overlap);
+        tileDelta.y = 2.0f * (float) Math.atan2(camera.ySize/2,focalLength) * (1.0f-overlap);
         tileNum.x = (int) Math.ceil(region.width()/tileDelta.x);
         tileNum.y = (int) Math.ceil(region.height()/tileDelta.y);
+        Log.d("PANORAMA", "Generate tiles calculated tile numbers " + tileNum.toString() + " and tile deltas " + tileDelta.toString());
         if(is360pano) { // if we have a 360 pano we can adjust spacing slightly to optimize overlap
-            tileDelta.x = (float) 360.0/tileNum.x; // space out evenly with slightly more overlap
+            tileDelta.x = (float) (2*Math.PI)/tileNum.x; // space out evenly with slightly more overlap
         }
         // this is the amount the corner of our tiling will have to be shifted in order to center
         // our over-sized acquisition region on the requested acquisition region
@@ -144,22 +151,22 @@ public class Panorama {
         // now we have to do case-by-case parameters
         // due to helper functions, all we have to do are play with signs of things
         switch(panoCorner) { // all corner information encoded in origin and spacing vectors
-            case CORNER_TOP_LEFT:
+            case CORNER_BOT_LEFT:
                 tileOrigin.y = region.top + tileOriginShift.y;
                 tileOrigin.x = region.left - tileOriginShift.x;
-                tileDelta.y*=-1; // flip sign of spacing so vector points down
+                tileDelta.y*=-1; // flip sign of spacing so vector points up (negative y)
                 break;
-            case CORNER_TOP_RIGHT:
+            case CORNER_BOT_RIGHT:
                 tileOrigin.y = region.top + tileOriginShift.y;
                 tileOrigin.x = region.right + tileOriginShift.x;
                 tileDelta.x*=-1; tileDelta.y*=-1; // flip more signs etc.
                 break;
-            case CORNER_BOT_LEFT:
+            case CORNER_TOP_LEFT:
                 tileOrigin.y = region.bottom - tileOriginShift.y;
                 tileOrigin.x = region.left - tileOriginShift.x;
-                // no need to flip any here - starting in bottom left so both deltas are positive
+                // no need to flip any here - starting in top left so both deltas are positive
                 break;
-            case CORNER_BOT_RIGHT:
+            case CORNER_TOP_RIGHT:
                 tileOrigin.y = region.bottom - tileOriginShift.y;
                 tileOrigin.x = region.right + tileOriginShift.x;
                 tileDelta.x*=-1;
@@ -181,9 +188,12 @@ public class Panorama {
     }
 
     public List<BluetoothInstruction> generateInstructionList(PositionConverter converterIn) {
+
+        Log.d("PANORAMA", "Generating instruction list...");
         // generates a list of instructions that will acquire panorama if executed in order
         // requires a PositionConverter implementation to convert degrees to stepper motor positions
         List<BluetoothInstruction> out = new ArrayList<BluetoothInstruction>();
+        Log.d("PANORAMA", "Calling generate tiles");
         List<PointF> tiles = generateTiles();
         // first instruction in acquisition is changing mode of motors to point-by-point
         out.add(new BluetoothInstruction(GeneratedConstants.INST_SET_MODE, (short) 1, (short) 0));
@@ -194,6 +204,7 @@ public class Panorama {
             convertedPosition = converterIn.convertDegreesToSteps(tile);
             // instruction to move to position
             // TODO WARN ABOUT 16-bit overflow or handle in a smart way
+            Log.d("PANORAMA", "Adding tile instruction at position " + convertedPosition.x + ", " + convertedPosition.y);
             out.add(new BluetoothInstruction(GeneratedConstants.INST_MOVE_ABS,
                     (short) convertedPosition.x, (short) convertedPosition.y));
             // instruction to take photo, which includes settling and exposure time
@@ -288,6 +299,7 @@ public class Panorama {
                 for(xIndex = num.x - 1; xIndex >= 0; xIndex--) {
                     out.add(getTileFromIndex(xIndex,yIndex,origin,delta));
                 }
+                yIndex++;
             }
         }
         else if(direction == DIRECTION_COLUMN) {
@@ -300,6 +312,7 @@ public class Panorama {
                 for(yIndex = num.y - 1; yIndex >= 0; yIndex--) {
                     out.add(getTileFromIndex(xIndex,yIndex,origin,delta));
                 }
+                xIndex++;
             }
         }
         else {
@@ -312,6 +325,7 @@ public class Panorama {
         // common simple calculation shows up in all tile config calcs
         // this is because all tile configs have same positions but just a different alg
         // to calculate order of 2D indices
+        Log.d("PANORAMA", "Calculating tile at index " + xIndexIn + ", " + yIndexIn);
         return new PointF(originIn.x + xIndexIn*deltaIn.x,originIn.y + yIndexIn*deltaIn.y);
     }
 

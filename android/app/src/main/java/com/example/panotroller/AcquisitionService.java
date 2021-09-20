@@ -38,11 +38,12 @@ public class AcquisitionService extends Service {
     List<BluetoothInstruction> instructionList = null;
     ListIterator<BluetoothInstruction> instructionListIterator = null;
     BluetoothInstruction lastSentInstruction = null;
+    Handler mInternalHandler = new AcquisitionServiceHandler();
     Handler mExternalHandler;
 
     private boolean isEnabled = false; // have we been given an instruction list?
     public boolean isEnabled() {return isEnabled;}
-    private boolean isRunning = true; // tracks pause/resumed
+    private boolean isRunning = false; // tracks pause/resumed
     public boolean isRunning() {return isRunning;}
     private boolean isWaitingForResponse = false;
     private boolean isFinished = false;
@@ -60,6 +61,7 @@ public class AcquisitionService extends Service {
     }
 
     public void enableAcquisition(List<BluetoothInstruction> listIn) {
+        Log.d("ACQUISITION", "Enabling Acquisition w/ instruction list of " + listIn.size());
         // need to get instruction list in order for us to execute it!
         instructionList = listIn;
         instructionListIterator = instructionList.listIterator();
@@ -69,17 +71,22 @@ public class AcquisitionService extends Service {
     public void setExternalHandler(Handler handlerIn) {mExternalHandler = handlerIn;}
 
     public boolean resumeAcquisition() {
+        Log.d("ACQUISITION", "Acquisition resume called");
         // only do things if we're not running + are enabled
         if(isEnabled && !isRunning) {
             isRunning = true;
             updateAcquisition();
+            Log.d("ACQUISITION", "Acquisition started/resumed");
             return true;
         }
+        Log.d("ACQUISITION", "Acquisition resume called but not resumed");
         return false; // acquisition didn't resume
     }
 
     public void pauseAcquisition() {
+        Log.d("ACQUISITION", "Acquisition pause called");
         if(isRunning) {
+            Log.d("ACQUISITION", "Acquisition paused");
             isRunning = false;
         }
     }
@@ -90,21 +97,31 @@ public class AcquisitionService extends Service {
             // advance iterator and send next instruction
             if(instructionListIterator.hasNext()) {
                 lastSentInstruction = instructionListIterator.next();
+                Log.d("ACQUISITION", "Progressing to next instruction: " + ConnectedThread.bytesToHex(new byte[]{lastSentInstruction.inst}));
                 mBluetoothService.sendInstructionViaThread(lastSentInstruction);
                 isWaitingForResponse = true;
-
             }
             else {
                 // acquisition is done! update accordingly
+                Log.d("ACQUISITION", "Acquisition done!");
                 isRunning = false;
                 isFinished = true;
             }
-            // an update was executed so notify client
-            mExternalHandler.obtainMessage(ACQUISITION_STATUS_UPDATE).sendToTarget();
+            // an update was executed so notify client (if we've been provided a handler)
+            if(mExternalHandler != null) {
+                mExternalHandler.obtainMessage(ACQUISITION_STATUS_UPDATE).sendToTarget();
+            }
+            else {
+                Log.w("ACQUISITION", "Attempted to send message to null handler!");
+            }
+        }
+        else {
+            Log.d("ACQUISITION", "update() called but no action taken");
         }
     }
 
     public void restartAcquisition() {
+        Log.d("ACQUISITION", "Acquisition restarted");
         instructionListIterator = instructionList.listIterator();
         isFinished = false;
         isRunning = true;
@@ -112,9 +129,17 @@ public class AcquisitionService extends Service {
     }
 
     public float getProgress() {
+        Log.d("ACQUISITION", "Acquisition progress called: " + instructionListIterator.nextIndex() + "/" + instructionList.size());
         // next index works because list indices start at 0
         // also when this is exactly 1.0f the acquisition is done
-        return (float) instructionListIterator.nextIndex()/instructionList.size();
+        return (float) instructionListIterator.nextIndex() / instructionList.size();
+    }
+
+    public BluetoothService.BluetoothBarInfo getBluetoothBarInfo() {
+        if(mBluetoothService != null) {
+            return mBluetoothService.getBluetoothBarInfo();
+        }
+        return null; // TODO BETTER BASE CASE
     }
 
     /* STUFF TO ALLOW CLIENTS TO BIND TO US */
@@ -141,8 +166,9 @@ public class AcquisitionService extends Service {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
-            Log.d("SERVICE_CONNECTED","BT Service Connected");
+            Log.d("ACQUISITION","Acq. service connected to BT service");
             // begin executing instructions
+            mBluetoothService.setHandler(mInternalHandler);
             isWaitingForResponse = false; // ensure that we're not waiting to start acq.
         }
         @Override
@@ -160,10 +186,11 @@ public class AcquisitionService extends Service {
                     break;
                 case BluetoothService.NEW_INSTRUCTION_IN:
                     BluetoothInstruction newInstruction = (BluetoothInstruction) msg.obj;
+                    Log.d("ACQUISITION", "Acquisition got a new instruction, inst = " + ConnectedThread.bytesToHex(new byte[]{newInstruction.inst}));
                     // is this a response to the last instruction we sent?
                     // check by comparing instruction code against expected response code
                     // flipping first bit of android instruction gives arduino response code
-                    if(newInstruction.inst == (lastSentInstruction.inst ^ 0x80)) {
+                    if(newInstruction.inst == (lastSentInstruction.inst ^ (byte) 0x80)) {
                         // TODO verify data inside instruction is what we expect as well
                         isWaitingForResponse = false;
                         updateAcquisition();
@@ -174,8 +201,13 @@ public class AcquisitionService extends Service {
                     break;
             }
             // pretty safe to update bluetooth bar anytime this happens
-            mExternalHandler.obtainMessage(
-                    BLUETOOTH_STATUS_UPDATE, mBluetoothService.getBluetoothBarInfo()).sendToTarget();
+            if(mExternalHandler != null) {
+                mExternalHandler.obtainMessage(
+                        BLUETOOTH_STATUS_UPDATE, mBluetoothService.getBluetoothBarInfo()).sendToTarget();
+            }
+            else {
+                Log.w("ACQUISITION", "Attempted to send message to null handler!");
+            }
         }
     }
 }
