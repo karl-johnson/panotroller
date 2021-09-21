@@ -49,6 +49,11 @@ public class AcquisitionService extends Service {
     private boolean isFinished = false;
     public boolean isFinished() {return isFinished;}
 
+    private int totalPhotos = 0; // total number of photos in acquisition
+    public int getTotalPhotos() {return totalPhotos;}
+    private int photoProgress = 0; // number of photos which we've gotten confirmation back on
+    public int getPhotosProgress() {return photoProgress;}
+
     /* PUBLIC METHODS */
 
     @Override
@@ -61,32 +66,37 @@ public class AcquisitionService extends Service {
     }
 
     public void enableAcquisition(List<BluetoothInstruction> listIn) {
-        Log.d("ACQUISITION", "Enabling Acquisition w/ instruction list of " + listIn.size());
         // need to get instruction list in order for us to execute it!
         instructionList = listIn;
         instructionListIterator = instructionList.listIterator();
+        // for now, iterate through list and count number of photos in it
+        // in future, if this takes a long time we can simply pass in # of photos TODO
+        for(BluetoothInstruction instruction : instructionList) {
+            if(instruction.inst == GeneratedConstants.INST_TRIG_PHOT) totalPhotos++;
+        }
+        Log.d("ACQUISITION", "Enabling acquisition w/ instruction list of length " + listIn.size() + " containing " + totalPhotos + " photos");
         isEnabled = true;
     }
 
     public void setExternalHandler(Handler handlerIn) {mExternalHandler = handlerIn;}
 
     public boolean resumeAcquisition() {
-        Log.d("ACQUISITION", "Acquisition resume called");
+        //Log.d("ACQUISITION", "Acquisition resume called");
         // only do things if we're not running + are enabled
         if(isEnabled && !isRunning) {
             isRunning = true;
             updateAcquisition();
-            Log.d("ACQUISITION", "Acquisition started/resumed");
+            //Log.d("ACQUISITION", "Acquisition started/resumed");
             return true;
         }
-        Log.d("ACQUISITION", "Acquisition resume called but not resumed");
+        //Log.d("ACQUISITION", "Acquisition resume called but not resumed");
         return false; // acquisition didn't resume
     }
 
     public void pauseAcquisition() {
-        Log.d("ACQUISITION", "Acquisition pause called");
+        //Log.d("ACQUISITION", "Acquisition pause called");
         if(isRunning) {
-            Log.d("ACQUISITION", "Acquisition paused");
+            //Log.d("ACQUISITION", "Acquisition paused");
             isRunning = false;
         }
     }
@@ -97,7 +107,7 @@ public class AcquisitionService extends Service {
             // advance iterator and send next instruction
             if(instructionListIterator.hasNext()) {
                 lastSentInstruction = instructionListIterator.next();
-                Log.d("ACQUISITION", "Progressing to next instruction: " + ConnectedThread.bytesToHex(new byte[]{lastSentInstruction.inst}));
+                //Log.d("ACQUISITION", "Progressing to next instruction: " + ConnectedThread.bytesToHex(new byte[]{lastSentInstruction.inst}));
                 mBluetoothService.sendInstructionViaThread(lastSentInstruction);
                 isWaitingForResponse = true;
             }
@@ -125,11 +135,12 @@ public class AcquisitionService extends Service {
         instructionListIterator = instructionList.listIterator();
         isFinished = false;
         isRunning = true;
+        photoProgress = 0;
         updateAcquisition();
     }
 
     public float getProgress() {
-        Log.d("ACQUISITION", "Acquisition progress called: " + instructionListIterator.nextIndex() + "/" + instructionList.size());
+        //Log.d("ACQUISITION", "Acquisition progress called: " + instructionListIterator.nextIndex() + "/" + instructionList.size());
         // next index works because list indices start at 0
         // also when this is exactly 1.0f the acquisition is done
         return (float) instructionListIterator.nextIndex() / instructionList.size();
@@ -186,12 +197,14 @@ public class AcquisitionService extends Service {
                     break;
                 case BluetoothService.NEW_INSTRUCTION_IN:
                     BluetoothInstruction newInstruction = (BluetoothInstruction) msg.obj;
-                    Log.d("ACQUISITION", "Acquisition got a new instruction, inst = " + ConnectedThread.bytesToHex(new byte[]{newInstruction.inst}));
+                    //Log.d("ACQUISITION", "Acquisition got a new instruction, inst = " + ConnectedThread.bytesToHex(new byte[]{newInstruction.inst}));
                     // is this a response to the last instruction we sent?
                     // check by comparing instruction code against expected response code
                     // flipping first bit of android instruction gives arduino response code
                     if(newInstruction.inst == (lastSentInstruction.inst ^ (byte) 0x80)) {
                         // TODO verify data inside instruction is what we expect as well
+                        // increment photo counter
+                        if(newInstruction.inst == GeneratedConstants.INST_TOOK_PHOT) photoProgress++;
                         isWaitingForResponse = false;
                         updateAcquisition();
                     }

@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Point;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,10 +15,11 @@ import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
 
 import androidx.appcompat.widget.Toolbar;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.github.controlwear.virtual.joystick.android.JoystickView;
@@ -36,13 +38,21 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     /* MEMBERS */
     private boolean mShouldUnbind = false;
+    // are we waiting for a position back from bluetooth connection to add to pano?
+    private boolean mHasOutstandingAdd = false;
+    private boolean mHasOutstandingRemove = false;
+
     private BluetoothService mBluetoothService;
+    private Handler mHandler = new PanoSetupHandler();
     private Panorama mPanorama = testPanorama; // panorama being edited in this activity
 
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
     private JoystickView mJoystick;
+    private ImageButton mAddButton;
+    private ImageButton mRemoveButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,12 +63,17 @@ public class ActivityPanoSetup extends AppCompatActivity {
         mBluetoothBar = (FragmentBluetoothBar) getSupportFragmentManager().findFragmentById(
                 R.id.pano_setup_bt_bar);
         mJoystick = (JoystickView) findViewById(R.id.joystick);
+        mAddButton = (ImageButton) findViewById(R.id.add_point);
+        mRemoveButton = (ImageButton) findViewById(R.id.remove_point);
+
+        // set up button actions
+        mAddButton.setOnClickListener(this::onAddButton);
+
         // setup action bar
         setTitle("Panorama Setup");
         Toolbar thisToolbar = (Toolbar) findViewById(R.id.pano_setup_toolbar);
         setSupportActionBar(thisToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // add back button to action bar
-        // bind to bluetooth service
     }
 
     public void onResume() {
@@ -89,9 +104,10 @@ public class ActivityPanoSetup extends AppCompatActivity {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
+            mBluetoothService.setHandler(mHandler);
             mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
             Log.d("SERVICE_CONNECTED","BT Service Connected");
-            // set to velocity mode
+            // set device to velocity mode
             mBluetoothService.sendInstructionViaThread(new BluetoothInstruction(GeneratedConstants.INST_SET_MODE,(short) 0, (short) 0));
             setJoystickListeners();
         }
@@ -99,6 +115,23 @@ public class ActivityPanoSetup extends AppCompatActivity {
         public void onServiceDisconnected(ComponentName arg0) {}
     };
 
+    /* BUTTON METHODS */
+    private void onAddButton(View view) {
+        // set "waiting for add" flag and request current position from remote device
+        // only do this if we're not already waiting for either add/remove (e.g. double press)
+        if(!mHasOutstandingAdd && !mHasOutstandingRemove) {
+            mHasOutstandingAdd = true;
+            mBluetoothService.sendInstructionViaThread(new BluetoothInstruction(GeneratedConstants.INST_GET_POS, (short) 0, (short) 0));
+            // actual adding of point is done in Handler when we get position back
+        }
+    }
+
+    private void onRemoveButton(View view) {
+        if(!mHasOutstandingRemove && !mHasOutstandingAdd) {
+            mHasOutstandingRemove = true;
+            mBluetoothService.sendInstructionViaThread(new BluetoothInstruction(GeneratedConstants.INST_GET_POS, (short) 0, (short) 0));
+        }
+    }
 
     /* JOYSTICK METHODS */
 
@@ -106,8 +139,9 @@ public class ActivityPanoSetup extends AppCompatActivity {
         mJoystick.setOnMoveListener(new JoystickView.OnMoveListener() {
             @Override
             public void onMove(int angle, int strength) {
+                // flip Y axis so DOWN means +Y (to align with Android.Point sign convention)
                 sendMotorVels((short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.cos(Math.toRadians(angle))),
-                        (short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.sin(Math.toRadians(angle))));
+                        (short) (MAX_JOY_MOTOR_SPEED * -0.01 * strength * Math.sin(Math.toRadians(angle))));
             }
         }, JOY_UPDATE_FREQUENCY);
     }
@@ -116,7 +150,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         // send motor velocity in 1/8 steps per second
         mBluetoothService.sendInstructionViaThread(new BluetoothInstruction(
                 GeneratedConstants.INST_SET_MTR, XVel, YVel));
-        Log.d("VELS_SENT", String.valueOf(XVel) + " " + String.valueOf(YVel));
+        //Log.d("VELS_SENT", String.valueOf(XVel) + " " + String.valueOf(YVel));
     }
 
     /* TOOLBAR SETUP METHODS */
@@ -126,6 +160,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
         // make back button actually go back
         if (item.getItemId() == android.R.id.home) {
             onBackPressed(); // use back button logic to do this for us
+
+            // stop acquisition service - this i
             return true;
         }
         else if(item.getItemId() == R.id.continue_button) {
@@ -158,9 +194,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
             List<BluetoothInstruction> exportInstructionList = mPanorama.generateInstructionList(mPositionConverter);
             // NOTE: if you're having issues with null instruction list, look here
             acquisitionService.enableAcquisition(exportInstructionList);
-
             // launch next activity
-            // TODO THIS MIGHT JUST NOT WORK LMAO
             Log.d("ACQUISITION_SETUP", "Attempting to launch acquisition activity");
             Intent intent = new Intent(getApplicationContext(), ActivityPanoAcquisition.class);
             startActivity(intent);
@@ -181,6 +215,26 @@ public class ActivityPanoSetup extends AppCompatActivity {
     class PanoSetupHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
+            if(msg.what == BluetoothService.NEW_INSTRUCTION_IN) {
+                BluetoothInstruction newInstruction = (BluetoothInstruction) msg.obj;
+                if(newInstruction.inst == GeneratedConstants.INST_GOT_POS) {
+                    if(mHasOutstandingAdd) {
+                        // get position (in steps) out of instruction
+                        Point newPosition = new Point(newInstruction.int1, newInstruction.int2);
+                        Log.d("PANORAMA", "Adding point " + newPosition.toString());
+                        // convert this step position to degree pos and add to panorama
+                        mPanorama.addPoint(mPositionConverter.convertStepsToDegrees(newPosition));
+                        mHasOutstandingAdd = false;
+                    }
+                    else if(mHasOutstandingRemove) {
+                        Point newPosition = new Point(newInstruction.int1, newInstruction.int2);
+                        Log.d("PANORAMA", "Removing point " + newPosition.toString());
+                        // convert step position and remove nearest point in panorama
+                        mPanorama.removeNearestPoint(mPositionConverter.convertStepsToDegrees(newPosition));
+                        mHasOutstandingRemove = false;
+                    }
+                }
+            }
             // any new status or instruction in gives us reason to update status bar
             // may want to add a timer in the future as to prevent this from happening too much
             if(msg.what == BluetoothService.CONN_STATUS_UPDATED || msg.what == BluetoothService.NEW_INSTRUCTION_IN) {

@@ -7,16 +7,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -133,6 +130,9 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             mAcquisitionService.setExternalHandler(mAcquisitionHandler);
             // Update bluetooth bar using acquisition service bt bar passthrough method
             mBluetoothBar.update(mAcquisitionService.getBluetoothBarInfo());
+            // Also populate UI with stats about upcoming acquisition
+            mPhotosText.setText(mAcquisitionService.getTotalPhotos() + " photos");
+            updateRemainingPhotosText();
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {}
@@ -143,7 +143,6 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
         // make back button actually go back
         if (item.getItemId() == android.R.id.home) {
             // TODO show popup about stopping acquisition
-            // TODO stop AcquisitionService
             // first have to unbind prior to stopping service
             if (mShouldUnbind) {
                 mShouldUnbind = false;
@@ -169,12 +168,14 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
                         setProgressBarWidth(mProgressBar.getWidth());
                         mProgressBarText.setBackgroundColor(getColor(R.color.green_accent));
                         mProgressBarText.setText("Acquisition Complete");
+                        mRemainingText.setText("Complete!");
                         // also set play button to look like a replay button
                         mPausePlayButton.setImageResource(R.drawable.ic_baseline_replay);
                     }
                     else {
                         // update progress bar and text fields with normal progress
                         setProgressBarPercent(mAcquisitionService.getProgress());
+                        updateRemainingPhotosText();
                     }
                     break;
                 case AcquisitionService.BLUETOOTH_STATUS_UPDATE:
@@ -198,5 +199,10 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
         ViewGroup.LayoutParams newParams = mProgressBarText.getLayoutParams();
         newParams.width = newWidth;
         mProgressBarText.setLayoutParams(newParams);
+    }
+
+    private void updateRemainingPhotosText() {
+        int remaining = mAcquisitionService.getTotalPhotos()-mAcquisitionService.getPhotosProgress();
+        mRemainingText.setText(remaining + " photos remaining");
     }
 }

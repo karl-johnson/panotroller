@@ -57,7 +57,7 @@ public class ConnectedThread extends Thread {
                             try {
                                 BluetoothInstruction newInstruction = new BluetoothInstruction(saveArray);
                                 mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
-                                Log.d("CONNECTED_THREAD","Sent new instruction message");
+                                Log.d("CONNECTED_THREAD","Received new instruction, sent to handler");
                             } catch (BluetoothInstruction.CorruptedInstructionException e) {
                                 mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_CORRUPTED).sendToTarget();
                             } catch (IOException e2) {

@@ -65,17 +65,17 @@ public class Panorama {
      This is why 360's are handled differently at the tile generation stage
      */
     // NOTE RectF sign convention has (+,+) corner as BOTTOM right! (common image coordinate conv.)
-    private RectF region;
+    private RectF region = new RectF(0,0,0,0);
     public RectF getRegion() {return region;}
     // TODO test all sign convention things to ensure they're correct
     // panorama settings members
     // settings which impact tile generation (with reasonable defaults)
     public int panoOrder = ORDER_ZIGZAG;
     public int panoDirection = DIRECTION_COLUMN;
-    public int panoCorner = CORNER_BOT_RIGHT;
+    public int panoCorner = CORNER_TOP_LEFT;
     private boolean is360pano = false; // TODO ensure 360 work properly
     public PanoramaCamera camera = builtInCameras.get("CANON_5D_MARK_II");
-    public float focalLength = 50;
+    public float focalLength = 100;
     public float overlap = 0.2f; // desired overlap between tiles in panorama
     // settings which impact timing
     public short settleTime = 0; // desired settle time after end of move before exposure starts
@@ -97,6 +97,7 @@ public class Panorama {
         // TODO WRAP INPUT?
         definingPoints.add(in);
         updateRegionFromPoints();
+        Log.d("PANORAMA", "Added point, new region is " + region.toString());
     }
 
     public void removeNearestPoint(PointF in) {
@@ -118,6 +119,7 @@ public class Panorama {
         }
         definingPoints.remove(nearestPoint); // remove the nearest point we found
         updateRegionFromPoints();
+        Log.d("PANORAMA", "Removed point, new region is " + region.toString());
     }
 
     public List<PointF> generateTiles() {
@@ -153,24 +155,27 @@ public class Panorama {
         // due to helper functions, all we have to do are play with signs of things
         switch(panoCorner) { // all corner information encoded in origin and spacing vectors
             case CORNER_TOP_LEFT:
-                tileOrigin.y = region.top + tileOriginShift.y;
+                // top left is corner with most negative coordinates (image convention)
+                tileOrigin.y = region.top - tileOriginShift.y;
                 tileOrigin.x = region.left - tileOriginShift.x;
-                tileDelta.y*=-1; // flip sign of spacing so vector points down (negative y)
                 break;
             case CORNER_TOP_RIGHT:
-                tileOrigin.y = region.top + tileOriginShift.y;
+                // top right has most positive x but most negative y
+                tileOrigin.y = region.top - tileOriginShift.y;
                 tileOrigin.x = region.right + tileOriginShift.x;
-                tileDelta.x*=-1; tileDelta.y*=-1; // flip more signs etc.
+                tileDelta.x*=-1; // need to go (-x, +y) to get to panorama tiles
                 break;
             case CORNER_BOT_LEFT:
-                tileOrigin.y = region.bottom - tileOriginShift.y;
+                // bottom left has most positive y but most negative x
+                tileOrigin.y = region.bottom + tileOriginShift.y;
                 tileOrigin.x = region.left - tileOriginShift.x;
-                // no need to flip any here - both deltas are positive
+                tileDelta.y*=1; // need to go (+x, -y) to get to panorama tiles
                 break;
             case CORNER_BOT_RIGHT:
-                tileOrigin.y = region.bottom - tileOriginShift.y;
+                // top right has most positive x and y
+                tileOrigin.y = region.bottom + tileOriginShift.y;
                 tileOrigin.x = region.right + tileOriginShift.x;
-                tileDelta.x*=-1;
+                tileDelta.x*=-1; tileDelta.y*=1; // both negative as we are at most positive coords
                 break;
             default:
                 // TODO ERROR
@@ -221,7 +226,7 @@ public class Panorama {
         // if we ignore the fact that our azimuth (x) wraps irl, this line would be sufficient:
         region = getBoundingBox(definingPoints);
         // however at this point we could have x limits [-10, 370] which results in redundant acq.
-        // as such we
+        // TODO 360 panorama handling
     }
 
     private RectF getBoundingBox(List<PointF> pointsIn) {
@@ -237,8 +242,8 @@ public class Panorama {
                 if(thisPoint.x > out.right) out.right = thisPoint.x;
                 else if(thisPoint.x < out.left) out.left = thisPoint.x;
                 // Y coordinates
-                if(thisPoint.y > out.top) out.top = thisPoint.y;
-                else if(thisPoint.y < out.bottom) out.bottom = thisPoint.y;
+                if(thisPoint.y > out.bottom) out.bottom = thisPoint.y;
+                else if(thisPoint.y < out.top) out.top = thisPoint.y;
             }
         }
         return out;
