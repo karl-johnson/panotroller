@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,7 +34,6 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     // DEBUG: HARDCODED PANORAMA AND CAMERAS
     private Panorama.PanoramaCamera testCamera = Panorama.builtInCameras.get("CANON_5D_MARK_II");
-    private Panorama testPanorama = new Panorama(new RectF(0, 0, (float) (Math.PI/2.0f), (float) (Math.PI/4.0f)));
     private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
 
     /* MEMBERS */
@@ -44,7 +44,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     private BluetoothService mBluetoothService;
     private Handler mHandler = new PanoSetupHandler();
-    private Panorama mPanorama = testPanorama; // panorama being edited in this activity
+    private Panorama mPanorama; // panorama being edited in this activity
 
 
     /* UI OBJECTS */
@@ -225,6 +225,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
                         // convert this step position to degree pos and add to panorama
                         mPanorama.addPoint(mPositionConverter.convertStepsToDegrees(newPosition));
                         mHasOutstandingAdd = false;
+                        // haptic feedback on success
+                        mAddButton.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
                     }
                     else if(mHasOutstandingRemove) {
                         Point newPosition = new Point(newInstruction.int1, newInstruction.int2);
@@ -232,6 +234,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
                         // convert step position and remove nearest point in panorama
                         mPanorama.removeNearestPoint(mPositionConverter.convertStepsToDegrees(newPosition));
                         mHasOutstandingRemove = false;
+                        mRemoveButton.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
                     }
                 }
             }

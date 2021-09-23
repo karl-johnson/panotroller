@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SliderSettingsModule">
+        <attr name="titleText" format="string"/>
+        <attr name="sliderMin" format="float"/>
+        <attr name="sliderMax" format="float"/>
+        <attr name="sliderPrimaryColor" format="color"/>
+        <attr name="sliderSecondaryColor" format="color"/>
+        <attr name="adjStep" format="float"/>
+        <attr name="titleTextColor" format="color"/>
+        <attr name="valueTextColor" format="color"/>
+        <attr name="width" format="dimension"/>
+
+    </declare-styleable>
+</resources>
