@@ -1,7 +1,9 @@
 package com.example.panotroller;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.widget.LinearLayout;
 
 import androidx.annotation.Nullable;
@@ -23,6 +25,17 @@ public class SliderSettingsModule extends ConstraintLayout {
 
     public SliderSettingsModule(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        LayoutInflater li = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        li.inflate (R.layout.slider_settings_module, this, true);
+        // get and apply attributes from AttributeSet
+        TypedArray a=context.obtainStyledAttributes(attrs, R.styleable.SliderSettingsModule);
+
+        //
+
+
+        a.recycle();
+
     }
 
 
