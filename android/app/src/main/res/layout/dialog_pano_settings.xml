@@ -1,35 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/grey_bkd"
     android:orientation="vertical"
-    android:showDividers="none">
+    android:showDividers="none" >
 
-    <Spinner
-        android:id="@+id/spinner_camera"
+
+    <LinearLayout
+        android:id="@+id/SliderSettingsContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        tools:layout_editor_absoluteY="141dp" />
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <Spinner
-        android:id="@+id/spinner_direction"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <Spinner
+            android:id="@+id/cameraSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:spinnerMode="dropdown" />
 
-    <Spinner
-        android:id="@+id/spinner_order"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <com.example.panotroller.SliderSettingsModule
+            android:id="@+id/focalSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:stepSize="1"
+            app:titleText="Focal Length (mm)"
+            app:value="50"
+            app:valueFrom="11"
+            app:valueTo="600" />
 
-    <Spinner
-        android:id="@+id/spinner_corner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <com.example.panotroller.SliderSettingsModule
+            android:id="@+id/overlapSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:stepSize="1"
+            app:titleText="Overlap (%)"
+            app:value="20"
+            app:valueFrom="0"
+            app:valueTo="100" />
 
-    <SeekBar
-        android:id="@+id/seekBar2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <com.example.panotroller.SliderSettingsModule
+            android:id="@+id/settleSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:stepSize="0.1"
+            app:titleText="Settle time (s)"
+            app:value="0"
+            app:valueFrom="0"
+            app:valueTo="10" />
 
-</LinearLayout>
+        <com.example.panotroller.SliderSettingsModule
+            android:id="@+id/exposureSlider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:stepSize="0.1"
+            app:titleText="Exposure time (s)"
+            app:value="0"
+            app:valueFrom="0"
+            app:valueTo="10" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

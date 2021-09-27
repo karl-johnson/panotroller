@@ -2,14 +2,9 @@
 <resources>
     <declare-styleable name="SliderSettingsModule">
         <attr name="titleText" format="string"/>
-        <attr name="sliderMin" format="float"/>
-        <attr name="sliderMax" format="float"/>
-        <attr name="sliderPrimaryColor" format="color"/>
-        <attr name="sliderSecondaryColor" format="color"/>
-        <attr name="adjStep" format="float"/>
-        <attr name="titleTextColor" format="color"/>
-        <attr name="valueTextColor" format="color"/>
-        <attr name="width" format="dimension"/>
-
+        <attr name="valueFrom" format="float"/>
+        <attr name="valueTo" format="float"/>
+        <attr name="stepSize" format="float"/>
+        <attr name="value" format="float"/>
     </declare-styleable>
 </resources>

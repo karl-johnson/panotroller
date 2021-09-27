@@ -13,11 +13,15 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 
 import androidx.appcompat.widget.Toolbar;
 
@@ -52,7 +56,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
     private JoystickView mJoystick;
     private ImageButton mAddButton;
     private ImageButton mRemoveButton;
-
+    private ImageButton mSettingsButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,9 +69,12 @@ public class ActivityPanoSetup extends AppCompatActivity {
         mJoystick = (JoystickView) findViewById(R.id.joystick);
         mAddButton = (ImageButton) findViewById(R.id.add_point);
         mRemoveButton = (ImageButton) findViewById(R.id.remove_point);
+        mSettingsButton = (ImageButton) findViewById(R.id.pano_settings);
 
         // set up button actions
         mAddButton.setOnClickListener(this::onAddButton);
+        mRemoveButton.setOnClickListener(this::onRemoveButton);
+        mSettingsButton.setOnClickListener(this::onSettingsButton);
 
         // setup action bar
         setTitle("Panorama Setup");
@@ -131,6 +138,23 @@ public class ActivityPanoSetup extends AppCompatActivity {
             mHasOutstandingRemove = true;
             mBluetoothService.sendInstructionViaThread(new BluetoothInstruction(GeneratedConstants.INST_GET_POS, (short) 0, (short) 0));
         }
+    }
+
+    private void onSettingsButton(View view) {
+        // inflate the layout of the popup window
+        LayoutInflater inflater = (LayoutInflater)
+                getSystemService(LAYOUT_INFLATER_SERVICE);
+        View popupView = inflater.inflate(R.layout.dialog_pano_settings, null);
+
+        // create the popup window
+        int width = LinearLayout.LayoutParams.MATCH_PARENT;
+        int height = LinearLayout.LayoutParams.MATCH_PARENT;
+        boolean focusable = true; // lets taps outside the popup also dismiss it
+        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+
+        // show the popup window
+        // which view you pass in doesn't matter, it is only used for the window tolken
+        popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
     }
 
     /* JOYSTICK METHODS */
