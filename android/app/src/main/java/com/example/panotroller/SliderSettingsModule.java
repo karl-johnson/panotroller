@@ -64,14 +64,24 @@ public class SliderSettingsModule extends ConstraintLayout {
         // set up listeners for slider and buttons
         incButton.setOnTouchListener(this::onIncButton);
         decButton.setOnTouchListener(this::onDecButton);
-        slider.addOnChangeListener(this::onSliderDrag);
+        slider.setOnTouchListener(this::onSliderTouch);
         attributes.recycle();
         // we recycle this in onFinishInflate!
     }
 
-    private void onSliderDrag(Slider slider, float value, boolean fromUser) {
-        valueText.setText(String.valueOf(value));
+    private boolean onSliderTouch(View view, MotionEvent motionEvent) {
+        //slider.dispatchTouchEvent(motionEvent); // ensures normal touch listener actions are called
+        switch(motionEvent.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            case MotionEvent.ACTION_UP:
+                view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+                // slider was released, update EditText now
+                valueText.setText(String.valueOf(slider.getValue()));
+        }
+        return false;
     }
+
 
     private boolean onIncButton(View view, MotionEvent motionEvent) {
         if(motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
@@ -79,10 +89,7 @@ public class SliderSettingsModule extends ConstraintLayout {
             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             // increment value by step size, if there's room
             float newVal = slider.getValue() + slider.getStepSize();
-            if (newVal <= slider.getValueTo()) {
-                slider.setValue(newVal);
-                valueText.setText(String.valueOf(newVal));
-            }
+            setValueTo(newVal);
             return true;
         }
         return false;
@@ -94,15 +101,24 @@ public class SliderSettingsModule extends ConstraintLayout {
             view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             // decrement value by step size, if there's room
             float newVal = slider.getValue() - slider.getStepSize();
-            if (newVal >= slider.getValueFrom()) {
-                slider.setValue(newVal);
-                valueText.setText(String.valueOf(newVal));
-            }
+            setValueTo(newVal);
             return true;
         }
         return false;
     }
 
+    private void setValueTo(float newVal) {
+        // sets slider value and text, with checks + rounding to step size
+        float roundedNewVal = roundToNearest(newVal, slider.getStepSize());
+        if(roundedNewVal >= slider.getValueFrom() && roundedNewVal <= slider.getValueTo()) {
+            slider.setValue(roundedNewVal);
+            valueText.setText(String.valueOf(roundedNewVal));
+        }
+    }
+
+    private float roundToNearest(float in, float roundTo) {
+        return roundTo*Math.round(in/roundTo);
+    }
 
     public float getValue() {
         return slider.getValue();

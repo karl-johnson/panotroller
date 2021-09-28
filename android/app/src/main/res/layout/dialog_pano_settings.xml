@@ -4,9 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/grey_bkd"
+    android:layout_margin="16dp"
+    android:background="#F4333333"
     android:orientation="vertical"
-    android:showDividers="none" >
+    android:showDividers="none">
 
 
     <LinearLayout

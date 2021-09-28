@@ -13,16 +13,19 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AnimationSet;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 
+import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.appcompat.widget.Toolbar;
 
 import java.util.List;
@@ -34,7 +37,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
     /* CONSTANTS */
     private final static int MAX_JOY_MOTOR_SPEED = 400;
     private final static int JOY_UPDATE_FREQUENCY = 100; // update period of joystick in ms
-    // TODO LIST OF BUILT-IN CAMERAS
+    private final static int DIALOG_MARGIN = 40;
 
     // DEBUG: HARDCODED PANORAMA AND CAMERAS
     private Panorama.PanoramaCamera testCamera = Panorama.builtInCameras.get("CANON_5D_MARK_II");
@@ -146,14 +149,14 @@ public class ActivityPanoSetup extends AppCompatActivity {
                 getSystemService(LAYOUT_INFLATER_SERVICE);
         View popupView = inflater.inflate(R.layout.dialog_pano_settings, null);
 
-        // create the popup window
         int width = LinearLayout.LayoutParams.MATCH_PARENT;
         int height = LinearLayout.LayoutParams.MATCH_PARENT;
         boolean focusable = true; // lets taps outside the popup also dismiss it
         final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
-
         // show the popup window
         // which view you pass in doesn't matter, it is only used for the window tolken
+        // TODO change to startActivityForResult https://stackoverflow.com/questions/35264383/how-to-retrieve-values-from-popup-to-main
+        
         popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
     }
 
