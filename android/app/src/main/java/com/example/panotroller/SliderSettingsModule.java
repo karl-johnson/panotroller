@@ -107,7 +107,7 @@ public class SliderSettingsModule extends ConstraintLayout {
         return false;
     }
 
-    private void setValueTo(float newVal) {
+    public void setValueTo(float newVal) {
         // sets slider value and text, with checks + rounding to step size
         float roundedNewVal = roundToNearest(newVal, slider.getStepSize());
         if(roundedNewVal >= slider.getValueFrom() && roundedNewVal <= slider.getValueTo()) {

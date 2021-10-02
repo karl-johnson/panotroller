@@ -1,5 +1,6 @@
 package com.example.panotroller;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ComponentName;
@@ -7,25 +8,17 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Point;
-import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
-import android.view.Display;
-import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.AnimationSet;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 
-import androidx.appcompat.widget.LinearLayoutCompat;
 import androidx.appcompat.widget.Toolbar;
 
 import java.util.List;
@@ -39,6 +32,9 @@ public class ActivityPanoSetup extends AppCompatActivity {
     private final static int JOY_UPDATE_FREQUENCY = 100; // update period of joystick in ms
     private final static int DIALOG_MARGIN = 40;
 
+    private final static int SETTINGS_ACTIVITY_REQUEST_CODE = 1;
+
+
     // DEBUG: HARDCODED PANORAMA AND CAMERAS
     private Panorama.PanoramaCamera testCamera = Panorama.builtInCameras.get("CANON_5D_MARK_II");
     private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
@@ -51,7 +47,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     private BluetoothService mBluetoothService;
     private Handler mHandler = new PanoSetupHandler();
-    private Panorama mPanorama; // panorama being edited in this activity
+    private Panorama mPanorama = new Panorama(); // panorama being edited in this activity
 
 
     /* UI OBJECTS */
@@ -144,20 +140,45 @@ public class ActivityPanoSetup extends AppCompatActivity {
     }
 
     private void onSettingsButton(View view) {
+        // OLD legacy code from popupwindow attempt
         // inflate the layout of the popup window
+        /*
         LayoutInflater inflater = (LayoutInflater)
                 getSystemService(LAYOUT_INFLATER_SERVICE);
-        View popupView = inflater.inflate(R.layout.dialog_pano_settings, null);
-
+        View popupView = inflater.inflate(R.layout.popup_pano_settings, null);
         int width = LinearLayout.LayoutParams.MATCH_PARENT;
         int height = LinearLayout.LayoutParams.MATCH_PARENT;
         boolean focusable = true; // lets taps outside the popup also dismiss it
         final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
+        popupWindow.setInputMethodMode(PopupWindow.INPUT_METHOD_NEEDED);
+         */
         // show the popup window
         // which view you pass in doesn't matter, it is only used for the window tolken
+
         // TODO change to startActivityForResult https://stackoverflow.com/questions/35264383/how-to-retrieve-values-from-popup-to-main
-        
-        popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
+        Intent intent = new Intent(this, ActivityPanoramaSettings.class);
+        intent.putExtra("CURRENT_SETTINGS", mPanorama.settings);
+        startActivityForResult(intent, SETTINGS_ACTIVITY_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == SETTINGS_ACTIVITY_REQUEST_CODE) {
+            if(resultCode == RESULT_OK) {
+                Panorama.PanoramaSettings newSettings = data.getParcelableExtra("NEW_SETTINGS");
+                if(newSettings != null) {
+                    Log.d("PANO_SETUP", "Got new settings: " + newSettings.toString());
+                    mPanorama.settings = newSettings;
+                }
+                else {
+                    Log.d("PANO_SETUP", "No new settings!");
+                }
+            }
+            else if(resultCode == RESULT_CANCELED) {
+                Log.d("PANO_SETUP", "Settings cancelled!");
+            }
+        }
     }
 
     /* JOYSTICK METHODS */
@@ -193,6 +214,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         }
         else if(item.getItemId() == R.id.continue_button) {
             // TODO indicate loading, because this may take noticeable time
+
             Log.d("ACQUISITION_SETUP", "Starting Acquisition service...");
             // start acquisition service
             Intent AcqServiceIntent = new Intent(this, AcquisitionService.class);
@@ -234,7 +256,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.pano_setup_menu, menu);
+        getMenuInflater().inflate(R.menu.pano_setup_toolbar_menu, menu);
         return true;
     }
 

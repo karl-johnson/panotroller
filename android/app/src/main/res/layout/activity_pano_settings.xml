@@ -4,21 +4,31 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="16dp"
-    android:background="#F4333333"
+    android:background="@color/grey_bkd"
     android:orientation="vertical"
     android:showDividers="none">
 
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/pano_settings_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/pano_settings_toolbar_menu" />
 
     <LinearLayout
         android:id="@+id/SliderSettingsContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/pano_settings_toolbar">
 
         <Spinner
             android:id="@+id/cameraSpinner"
@@ -32,7 +42,7 @@
             android:layout_height="wrap_content"
             app:stepSize="1"
             app:titleText="Focal Length (mm)"
-            app:value="50"
+            app:value="33"
             app:valueFrom="11"
             app:valueTo="600" />
 
@@ -42,9 +52,9 @@
             android:layout_height="wrap_content"
             app:stepSize="1"
             app:titleText="Overlap (%)"
-            app:value="20"
+            app:value="33"
             app:valueFrom="0"
-            app:valueTo="100" />
+            app:valueTo="80" />
 
         <com.example.panotroller.SliderSettingsModule
             android:id="@+id/settleSlider"
@@ -52,7 +62,7 @@
             android:layout_height="wrap_content"
             app:stepSize="0.1"
             app:titleText="Settle time (s)"
-            app:value="0"
+            app:value="3.3"
             app:valueFrom="0"
             app:valueTo="10" />
 
@@ -62,7 +72,7 @@
             android:layout_height="wrap_content"
             app:stepSize="0.1"
             app:titleText="Exposure time (s)"
-            app:value="0"
+            app:value="3.3"
             app:valueFrom="0"
             app:valueTo="10" />
     </LinearLayout>

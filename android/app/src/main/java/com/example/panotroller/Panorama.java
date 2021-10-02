@@ -3,6 +3,8 @@ package com.example.panotroller;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -11,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 // object to define a panorama and export the movements/instructions needed to acquire that panorama
-public class Panorama {
+public class Panorama implements Parcelable {
     /*
      to shift micro-stepping concerns to lower-level portions of the code, this object is designed
      to work with all coordinates in degrees (panorama widths max out at 360 deg)
@@ -67,19 +69,9 @@ public class Panorama {
     // NOTE RectF sign convention has (+,+) corner as BOTTOM right! (common image coordinate conv.)
     private RectF region = new RectF(0,0,0,0);
     public RectF getRegion() {return region;}
-    // TODO test all sign convention things to ensure they're correct
-    // panorama settings members
-    // settings which impact tile generation (with reasonable defaults)
-    public int panoOrder = ORDER_ZIGZAG;
-    public int panoDirection = DIRECTION_COLUMN;
-    public int panoCorner = CORNER_TOP_LEFT;
+
+    public PanoramaSettings settings = new PanoramaSettings();
     private boolean is360pano = false; // TODO ensure 360 work properly
-    public PanoramaCamera camera = builtInCameras.get("CANON_5D_MARK_II");
-    public float focalLength = 100;
-    public float overlap = 0.2f; // desired overlap between tiles in panorama
-    // settings which impact timing
-    public short settleTime = 0; // desired settle time after end of move before exposure starts
-    public short exposureTime = 0; // desired still time after exposure triggered before next move
 
     /* future advanced function - take rows/columns without slowing down for each photo.
        in this case, we send single instructions for entire lines of photos as the timing for this
@@ -88,6 +80,41 @@ public class Panorama {
     */
     // private boolean isContinuousPano = false;
 
+    /* PARCELABLE CODE */
+
+    protected Panorama(Parcel in) {
+        definingPoints = in.createTypedArrayList(PointF.CREATOR);
+        region = in.readParcelable(RectF.class.getClassLoader());
+        settings = in.readParcelable(PanoramaSettings.class.getClassLoader());
+        is360pano = in.readByte() != 0;
+    }
+
+    public static final Creator<Panorama> CREATOR = new Creator<Panorama>() {
+        @Override
+        public Panorama createFromParcel(Parcel in) {
+            return new Panorama(in);
+        }
+
+        @Override
+        public Panorama[] newArray(int size) {
+            return new Panorama[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeTypedList(definingPoints);
+        dest.writeParcelable(region, flags);
+        dest.writeParcelable(settings, flags);
+        dest.writeByte((byte) (is360pano ? 1 : 0));
+    }
+
+    /* METHODS */
     // DEBUG CONSTRUCTOR
     Panorama() {};
 
@@ -127,6 +154,9 @@ public class Panorama {
         Log.d("PANORAMA", "Generate tiles called with region " + region.toString());
         Log.d("PANORAMA", "Generate tiles called with region size + (" + region.width() + "x" + region.height() + ")");
         // TODO input sanitation
+        // get camera from settings object - we will need it a lot
+        PanoramaCamera camera = settings.getCamera();
+
         // generates a list of tiles which span panorama region according to setting members
         List<PointF> out = new ArrayList<PointF>();
         // first calculate fundamental parameters of tiling common to all configurations
@@ -137,9 +167,9 @@ public class Panorama {
         PointF tileDelta = new PointF();
         Point tileNum = new Point(); // number of tiles in each direction
         // trig to compute AOV + reduce delta by desired overlap
-        Log.d("PANORAMA", "Focal length " + focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
-        tileDelta.x = 2.0f * (float) Math.atan2(camera.xSize/2,focalLength) * (1.0f-overlap);
-        tileDelta.y = 2.0f * (float) Math.atan2(camera.ySize/2,focalLength) * (1.0f-overlap);
+        Log.d("PANORAMA", "Focal length " + settings.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
+        tileDelta.x = 2.0f * (float) Math.atan2(camera.xSize/2,settings.focalLength) * (1.0f-settings.overlap);
+        tileDelta.y = 2.0f * (float) Math.atan2(camera.ySize/2,settings.focalLength) * (1.0f-settings.overlap);
         tileNum.x = (int) Math.ceil(region.width()/tileDelta.x);
         tileNum.y = (int) Math.ceil(region.height()/tileDelta.y);
         Log.d("PANORAMA", "Generate tiles calculated tile numbers " + tileNum.toString() + " and tile deltas " + tileDelta.toString());
@@ -153,7 +183,7 @@ public class Panorama {
         tileOriginShift.y = (tileDelta.y*tileNum.y - region.height())/2;
         // now we have to do case-by-case parameters
         // due to helper functions, all we have to do are play with signs of things
-        switch(panoCorner) { // all corner information encoded in origin and spacing vectors
+        switch(settings.corner) { // all corner information encoded in origin and spacing vectors
             case CORNER_TOP_LEFT:
                 // top left is corner with most negative coordinates (image convention)
                 tileOrigin.y = region.top - tileOriginShift.y;
@@ -180,12 +210,12 @@ public class Panorama {
             default:
                 // TODO ERROR
         }
-        switch(panoOrder) {
+        switch(settings.order) {
             case ORDER_ZIGZAG:
-                out = generateZigzagTiling(tileOrigin,tileDelta, tileNum, panoDirection);
+                out = generateZigzagTiling(tileOrigin,tileDelta, tileNum, settings.direction);
                 break;
             case ORDER_WRAP:
-                out = generateWrapTiling(tileOrigin,tileDelta, tileNum, panoDirection);
+                out = generateWrapTiling(tileOrigin,tileDelta, tileNum, settings.direction);
                 break;
             default:
                 // TODO ERROR
@@ -215,7 +245,7 @@ public class Panorama {
                     (short) convertedPosition.x, (short) convertedPosition.y));
             // instruction to take photo, which includes settling and exposure time
             out.add(new BluetoothInstruction(GeneratedConstants.INST_TRIG_PHOT,
-                    exposureTime, settleTime));
+                    settings.exposureTime, settings.settleTime));
         }
         return out;
     }
@@ -333,6 +363,77 @@ public class Panorama {
         // to calculate order of 2D indices
         Log.d("PANORAMA", "Calculating tile at index " + xIndexIn + ", " + yIndexIn);
         return new PointF(originIn.x + xIndexIn*deltaIn.x,originIn.y + yIndexIn*deltaIn.y);
+    }
+
+    public static class PanoramaSettings implements Parcelable {
+        // class to encapsulate panorama settings that can be edited by PanoramaSettingsMenu
+        // does not include panorama region and defining points etc.
+        public int order = ORDER_ZIGZAG;
+        public int direction = DIRECTION_COLUMN;
+        public int corner = CORNER_TOP_LEFT;
+        // to avoid parceling cameras (which are static anyways) simply store name
+        public String cameraName = "CANON_5D_MARK_II";
+        // then just fetch the camera by its name in the built in map when we need it
+        public PanoramaCamera getCamera() {
+            return builtInCameras.get(cameraName);
+        }
+        public float focalLength = 100;
+        public float overlap = 0.2f; // desired overlap between tiles in panorama (change to %?)
+        // settings which impact timing
+        public short settleTime = 0; // desired settle time after end of move before exposure starts
+        public short exposureTime = 0; // desired still time after exposure triggered before next move
+
+        public PanoramaSettings() {}
+
+        // method to print settings as string for debugging
+        public String toString() {
+            return "f: " + String.valueOf(focalLength) +
+                    ", o: " + String.valueOf(overlap) +
+                    ", s: " + String.valueOf(settleTime) +
+                    ", e: " + String.valueOf(exposureTime);
+        }
+
+        /* PARCELABLE METHODS */
+
+        protected PanoramaSettings(Parcel in) {
+            order = in.readInt();
+            direction = in.readInt();
+            corner = in.readInt();
+            cameraName = in.readString();
+            focalLength = in.readFloat();
+            overlap = in.readFloat();
+            settleTime = (short) in.readInt();
+            exposureTime = (short) in.readInt();
+        }
+
+        public static final Creator<PanoramaSettings> CREATOR = new Creator<PanoramaSettings>() {
+            @Override
+            public PanoramaSettings createFromParcel(Parcel in) {
+                return new PanoramaSettings(in);
+            }
+
+            @Override
+            public PanoramaSettings[] newArray(int size) {
+                return new PanoramaSettings[size];
+            }
+        };
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeInt(order);
+            dest.writeInt(direction);
+            dest.writeInt(corner);
+            dest.writeString(cameraName);
+            dest.writeFloat(focalLength);
+            dest.writeFloat(overlap);
+            dest.writeInt((int) settleTime);
+            dest.writeInt((int) exposureTime);
+        }
     }
 
     public static class PanoramaCamera {

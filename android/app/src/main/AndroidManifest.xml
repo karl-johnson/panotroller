@@ -14,9 +14,11 @@
             android:name=".AcquisitionService"
             android:enabled="true"
             android:exported="true"/>
-
         <activity
             android:name=".ActivityPanoAcquisition"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ActivityPanoramaSettings"
             android:screenOrientation="portrait" />
         <activity
             android:name=".ActivityPanoSetup"
@@ -29,7 +31,6 @@
         <activity android:name=".ActivityMain">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
