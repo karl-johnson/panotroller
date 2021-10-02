@@ -65,6 +65,13 @@ public class AcquisitionService extends Service {
                 BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
+    @Override
+    public void onDestroy() {
+        Log.d("ACQUISITION", "Service destroyed...");
+        stopForeground(true);
+        super.onDestroy();
+    }
+
     public void enableAcquisition(List<BluetoothInstruction> listIn) {
         // need to get instruction list in order for us to execute it!
         instructionList = listIn;
@@ -223,4 +230,6 @@ public class AcquisitionService extends Service {
             }
         }
     }
+
+
 }

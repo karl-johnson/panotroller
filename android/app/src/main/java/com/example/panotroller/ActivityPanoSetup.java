@@ -40,7 +40,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
     private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
 
     /* MEMBERS */
-    private boolean mShouldUnbind = false;
+    private boolean mShouldUnbindBt = false;
+    private boolean mShouldUnbindAcq = false;
     // are we waiting for a position back from bluetooth connection to add to pano?
     private boolean mHasOutstandingAdd = false;
     private boolean mHasOutstandingRemove = false;
@@ -49,6 +50,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
     private Handler mHandler = new PanoSetupHandler();
     private Panorama mPanorama = new Panorama(); // panorama being edited in this activity
 
+    private AcquisitionService mAcquisitionService;
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
@@ -86,7 +88,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         super.onResume();
         Log.d("TRY_BT_SERVICE", "Trying to connect to BT service");
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
-        mShouldUnbind = bindService(
+        mShouldUnbindBt = bindService(
                 BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
         Log.d("TRY_BT_SERVICE", "Past BT service code");
     }
@@ -95,9 +97,13 @@ public class ActivityPanoSetup extends AppCompatActivity {
     public void onPause() {
         super.onPause();
         Log.d("PANO_SETUP", "onPause");
-        if (mShouldUnbind) {
-            mShouldUnbind = false;
+        if (mShouldUnbindBt) {
+            mShouldUnbindBt = false;
             unbindService(mServiceConnection);
+        }
+        if (mShouldUnbindAcq) {
+            mShouldUnbindAcq = false;
+            unbindService(mAcquisitionServiceConnection);
         }
     }
 
@@ -216,16 +222,35 @@ public class ActivityPanoSetup extends AppCompatActivity {
             // TODO indicate loading, because this may take noticeable time
 
             Log.d("ACQUISITION_SETUP", "Starting Acquisition service...");
-            // start acquisition service
-            Intent AcqServiceIntent = new Intent(this, AcquisitionService.class);
-            startService(AcqServiceIntent);
-            // bind to service so we can give it the instruction list
-            mShouldUnbind = bindService(AcqServiceIntent, mAcquisitionServiceConnection, Context.BIND_AUTO_CREATE);
-            // since this binding is asynchronous, the rest of the pano acquisition launching
-            // is found in mAcquisitionServiceConnection.onServiceConnected()
+            // start acquisition service if we're not already bound
+            if(!mShouldUnbindAcq) {
+                Intent AcqServiceIntent = new Intent(this, AcquisitionService.class);
+                startService(AcqServiceIntent);
+                // bind to service so we can give it the instruction list
+                mShouldUnbindAcq = bindService(AcqServiceIntent, mAcquisitionServiceConnection, Context.BIND_AUTO_CREATE);
+                // since this binding is asynchronous, prepareAndStartAcquisition is called in
+                // mAcquisitionServiceConnection.onServiceConnected()
+            }
+            else {
+                prepareAndStartAcquisition();
+            }
+
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void prepareAndStartAcquisition() {
+        // now that we've started and bound to the new acquisitionService,
+        // generate instruction list
+        Log.d("ACQUISITION_SETUP", "Preparing activity");
+        List<BluetoothInstruction> exportInstructionList = mPanorama.generateInstructionList(mPositionConverter);
+        // NOTE: if you're having issues with null instruction list, look here
+        mAcquisitionService.enableAcquisition(exportInstructionList);
+        // launch next activity
+        Log.d("ACQUISITION_SETUP", "Attempting to launch acquisition activity");
+        Intent intent = new Intent(getApplicationContext(), ActivityPanoAcquisition.class);
+        startActivity(intent);
     }
 
     /* SERVICE CONNECTION - NEEDED TO CONNECT TO ACQUISITION SERVICE */
@@ -237,16 +262,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
             Log.d("ACQUISITION_SETUP", "Acquisition service connected");
             // This is called in the process of launching the acquisition activity
             AcquisitionService.LocalBinder binder = (AcquisitionService.LocalBinder) service;
-            AcquisitionService acquisitionService = binder.getService();
-            // now that we've started and bound to the new acquisitionService,
-            // generate instruction list
-            List<BluetoothInstruction> exportInstructionList = mPanorama.generateInstructionList(mPositionConverter);
-            // NOTE: if you're having issues with null instruction list, look here
-            acquisitionService.enableAcquisition(exportInstructionList);
-            // launch next activity
-            Log.d("ACQUISITION_SETUP", "Attempting to launch acquisition activity");
-            Intent intent = new Intent(getApplicationContext(), ActivityPanoAcquisition.class);
-            startActivity(intent);
+            mAcquisitionService = binder.getService();
+            prepareAndStartAcquisition();
         }
         @Override
         public void onServiceDisconnected(ComponentName arg0) {}
