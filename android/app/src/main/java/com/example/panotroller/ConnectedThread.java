@@ -88,6 +88,7 @@ public class ConnectedThread extends Thread {
             mOutStream.write(sendBytes);
         } catch (IOException e) {
             Log.e("WRITE_INSTR_FAILED", "Attempt to write instruction bytes failed");
+            e.printStackTrace();
         }
     }
 

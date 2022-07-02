@@ -95,7 +95,7 @@ public class FragmentBluetoothBar extends Fragment {
     @SuppressLint("SetTextI18n")
     public void update(BluetoothService.BluetoothBarInfo in) {
         //Log.d("BT_BAR_UPDATE", "Bluetooth Bar update() called");
-        if(mViewCreated) {
+        if(mViewCreated && (in != null)) {
             // TODO improve performance by eliminating redundant setBackgroundColor calls
             switch(in.status) {
                 case BluetoothService.STATUS_OFF:

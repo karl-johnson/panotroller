@@ -70,6 +70,9 @@ void setup() {
   stepperX.setAcceleration(500.0);
   stepperY.setMaxSpeed(400.0);
   stepperY.setAcceleration(500.0);
+
+  pinMode(MS1, OUTPUT);
+  pinMode(MS2, OUTPUT);
   setMicrostep(MOTOR_DEFAULT_MICROSTEP);
 }
 
@@ -82,7 +85,6 @@ void loop() {
 
   /****************** MAIN ACTION LOOP *******************/
 
-
   while(digitalRead(BT_STATE) != STATE_DISCONNECTED) {
 
     // motor tasks
@@ -93,6 +95,7 @@ void loop() {
     // poll SoftwareSerial bluetooth connection
     updateRx(&bluetooth, inputByteArray, &isMessageReady);
     if(isMessageReady) {
+      Serial.println("New message");
       // updateRx has signaled that an incoming message is ready
       latestInstruction.decodeFromBytes(inputByteArray);
       if(latestInstruction.isCorrupted) {

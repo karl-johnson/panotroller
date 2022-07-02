@@ -1,9 +1,13 @@
 package com.example.panotroller;
 
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -88,6 +92,11 @@ public class BluetoothService extends Service {
     @Override
     public void onCreate() {
         Toast.makeText(this, "BT service started", Toast.LENGTH_SHORT).show();
+        // register broadcast receiver, using an intent filter we make for it
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        // https://stackoverflow.com/questions/30222409/android-broadcast-receiver-bluetooth-events-catching
+        registerReceiver(bluetoothLostConnection, filter);
     }
 
     public void setHandler(Handler handlerIn) {
@@ -151,6 +160,9 @@ public class BluetoothService extends Service {
     @Override
     public void onDestroy() {
         // destroy bluetooth socket
+
+        // unregister broadcast receiver
+        unregisterReceiver(bluetoothLostConnection);
         Toast.makeText(this, "BT service stopped", Toast.LENGTH_SHORT).show();
     }
 
@@ -206,4 +218,25 @@ public class BluetoothService extends Service {
         return new BluetoothBarInfo(connectionStatus, lastLatency);
     }
 
+    /* BROADCAST RECEIVING STUFF */
+
+    private final BroadcastReceiver bluetoothLostConnection = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            Log.d("BT_BROADCAST","Bluetooth broadcast caught");
+            if (action.equals(BluetoothDevice.ACTION_ACL_DISCONNECTED)) {
+                Log.d("BT_DISCONNECTED","Bluetooth disconnect broadcast triggered");
+                // we received a broadcast that the bluetooth connection changed, and see that it is now off
+                // therefore we are disconnected - update status to reflect this and inform rest of app
+                setConnectionStatus(STATUS_DISCONNECTED);
+                // TODO PROBABLY NEED TO KILL MORE THINGS HERE
+                // if we have an external handler, tell it that the status has updated
+                if(externalHandler != null)
+                    externalHandler.obtainMessage(
+                        BluetoothService.CONN_STATUS_UPDATED,
+                        BluetoothService.STATUS_DISCONNECTED, 0).sendToTarget();
+            }
+        }
+    };
 }

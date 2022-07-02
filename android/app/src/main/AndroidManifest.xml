@@ -35,11 +35,13 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".BluetoothService">
+        <service android:name=".BluetoothService" android:exported="false">
             <intent-filter>
                 <action android:name=".QuickService .BIND" />
-
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
             </intent-filter>
         </service>
     </application>
