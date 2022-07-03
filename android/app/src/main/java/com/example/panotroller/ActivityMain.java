@@ -19,6 +19,7 @@ public class ActivityMain extends AppCompatActivity {
     /* MEMBERS */
     private boolean mShouldUnbind = false;
     private BluetoothService mBluetoothService;
+    private Handler mHandler = new MainActivityHandler();
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
@@ -95,8 +96,11 @@ public class ActivityMain extends AppCompatActivity {
                                        IBinder service) {
             Log.d("MAIN", "onServiceConnected");
             // We've bound to LocalService, cast the IBinder and get LocalService instance
+            // TODO LOCALIZE THIS!!!!
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
+            mBluetoothService.setHandler(mHandler);
+            mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
             Log.d("SERVICE_CONNECTED","BT Service Connected");
 
             // start Bluetooth Bar's 1-second interval self-updating clock TODO deprecate!!!!
@@ -119,6 +123,7 @@ public class ActivityMain extends AppCompatActivity {
         public void handleMessage(Message msg) {
             // any new status or instruction in gives us reason to update status bar
             // may want to add a timer in the future as to prevent this from happening too much
+            Log.d("a","main handler");
             if(msg.what == BluetoothService.CONN_STATUS_UPDATED || msg.what == BluetoothService.NEW_INSTRUCTION_IN) {
                 mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
             }

@@ -22,6 +22,18 @@ public class ConnectedThread extends Thread {
     private int byteIndex = 0; // keep track of location in message
     private byte[] saveArray = new byte[GeneratedConstants.MESSAGE_LENGTH];
 
+    private long lastLatency = 0; // last calculated ping
+    private long lastSentPingTime = 0; // last time a ping was sent
+    private short lastSentPingData = 0;
+    // number of times in a row we've sent a ping and not gotten a response within PING_PERIOD
+    private int numOutstandingPings = 0;
+    // set false if numOutstandingPings > MAX_PINGS
+    public boolean isConnectionHealthy = false;
+
+    /* CONSTANTS */
+    public final static int MAX_PINGS = 3; // how many unanswered pings before we question our connection
+    public final static int PING_PERIOD = 500; // how frequent to send pings, in ms
+
     /* CONSTRUCTOR */
     public ConnectedThread(BluetoothSocket socket, Handler mHandlerIn) {
         mSocket = socket;
@@ -56,6 +68,7 @@ public class ConnectedThread extends Thread {
                             // and send ArduinoInstruction object via handler
                             try {
                                 BluetoothInstruction newInstruction = new BluetoothInstruction(saveArray);
+                                checkIfPing(newInstruction);
                                 mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
                                 Log.d("CONNECTED_THREAD","Received new instruction, sent to handler");
                             } catch (BluetoothInstruction.CorruptedInstructionException e) {
@@ -75,6 +88,10 @@ public class ConnectedThread extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
                 break;
+            }
+            // handling pinging
+            if(System.currentTimeMillis() > lastSentPingTime + PING_PERIOD) {
+                sendPing();
             }
         }
     }
@@ -125,6 +142,48 @@ public class ConnectedThread extends Thread {
             }
             //mSocket = null;
         }
+    }
+
+    private void sendPing() {
+        // simple helper function to send pings for us
+            numOutstandingPings++;
+            lastSentPingTime = System.currentTimeMillis();
+            lastSentPingData = (short) (System.currentTimeMillis() % 32767);
+            writeArduinoInstruction(new BluetoothInstruction(
+                    GeneratedConstants.INST_PING_INT,
+                    lastSentPingData, lastSentPingData));
+            Log.d("OUTSTANDING_PINGS",String.valueOf(numOutstandingPings));
+            if(numOutstandingPings > MAX_PINGS) {
+                // update connection to "Connecting" and let BT service know of a change
+                isConnectionHealthy = false;
+                mHandler.obtainMessage(BluetoothService.CONN_STATUS_UPDATED).sendToTarget();
+            }
+    }
+
+    private void checkIfPing(BluetoothInstruction bluetoothInstructionIn) {
+        // see if an instruction we received is a ping
+        // if so, update everything
+        // TODO this will give false positives once every couple decades or something
+        if(bluetoothInstructionIn.int1 ==  lastSentPingData) {
+            // this doesn't account for us having multiple outstanding + get an old ping
+            // but if we have a healthy connection, we should get the most recent one soon enough
+            lastLatency = System.currentTimeMillis() - lastSentPingTime;
+            Log.d("LATENCY", String.valueOf(lastLatency));
+            numOutstandingPings = 0;
+            // if we were unhealthy but are now healthy, need to update everyone else
+            if(isConnectionHealthy = false) {
+                // need to do this yucky way because order matters
+                isConnectionHealthy = true;
+                mHandler.obtainMessage(BluetoothService.CONN_STATUS_UPDATED).sendToTarget();
+            }
+            else {
+                isConnectionHealthy = true;
+            }
+        }
+    }
+
+    public long getLastLatency() {
+        return lastLatency;
     }
 }
 

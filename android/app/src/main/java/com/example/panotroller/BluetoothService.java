@@ -64,8 +64,8 @@ public class BluetoothService extends Service {
     private final IBinder binder = new LocalBinder();
 
     public BluetoothInstruction lastSentInstruction = null; // last instruction sent to Arduino
-    public long lastSentInstructionTime = 0; // time at which last instruction was sent to Arduino
-    public long lastLatency = 0; // last calculated latency
+    //public long lastSentInstructionTime = 0; // time at which last instruction was sent to Arduino
+    //public long lastLatency = 0; // last calculated latency
 
     // who are WE (this app) connected to, if we are?
     public BluetoothDevice connectedDevice = null; // track the single device
@@ -140,7 +140,7 @@ public class BluetoothService extends Service {
         // update the lastSentInstruction properly
         if (internalConnectedThread != null) {
             lastSentInstruction = instructionIn;
-            lastSentInstructionTime = System.currentTimeMillis();
+            //lastSentInstructionTime = System.currentTimeMillis();
             internalConnectedThread.writeArduinoInstruction(instructionIn);
         }
         else {
@@ -175,10 +175,13 @@ public class BluetoothService extends Service {
             //Log.d("BL_SERVICE_HANDLER", "Bluetooth Service handler called!");
             // for now, only need to look at timing of message received to compute latency
             // eventually may want to use this to auto re-send corrupted messages etc.
-            if(msg.what == NEW_INSTRUCTION_IN) {
-                // Computing latency on every transaction for now
-                // TODO blacklist instructions that have too long of a delay for reasonable ping
-                lastLatency = System.currentTimeMillis() - lastSentInstructionTime;
+            if(msg.what == CONN_STATUS_UPDATED) {
+                // only thing we need to do (for now) is update connection status
+                if(internalConnectedThread != null) {
+                    if(!internalConnectedThread.isConnectionHealthy) {
+                        setConnectionStatus(STATUS_CONNECTING);
+                    }
+                }
             }
             // now that we're done with the message, send it along
             if(externalHandler != null) externalHandler.sendMessage(Message.obtain(msg));
@@ -188,20 +191,6 @@ public class BluetoothService extends Service {
     }
 
     /* BLUETOOTH BAR HELPERS */
-
-    public void sendPing(boolean doFloat) {
-        // simple helper function to send pings for us
-        if(doFloat) {
-            sendInstructionViaThread(new BluetoothInstruction(
-                    GeneratedConstants.INST_PING_FLOAT, mRandom.nextFloat()));
-        }
-        else {
-            sendInstructionViaThread(new BluetoothInstruction(
-                    GeneratedConstants.INST_PING_INT,
-                    (short) mRandom.nextInt(), (short) mRandom.nextInt()));
-        }
-
-    }
 
     public class BluetoothBarInfo {
         // way to localize data sent to bluetooth bar fragment when it is updated
@@ -215,6 +204,9 @@ public class BluetoothService extends Service {
 
     // simple way for any activity to quickly send data to update bluetooth bar fragment
     public BluetoothBarInfo getBluetoothBarInfo() {
+        long lastLatency = -1;
+        if(internalConnectedThread != null)
+            lastLatency = internalConnectedThread.getLastLatency();
         return new BluetoothBarInfo(connectionStatus, lastLatency);
     }
 
@@ -229,14 +221,29 @@ public class BluetoothService extends Service {
                 Log.d("BT_DISCONNECTED","Bluetooth disconnect broadcast triggered");
                 // we received a broadcast that the bluetooth connection changed, and see that it is now off
                 // therefore we are disconnected - update status to reflect this and inform rest of app
-                setConnectionStatus(STATUS_DISCONNECTED);
-                // TODO PROBABLY NEED TO KILL MORE THINGS HERE
-                // if we have an external handler, tell it that the status has updated
-                if(externalHandler != null)
-                    externalHandler.obtainMessage(
-                        BluetoothService.CONN_STATUS_UPDATED,
-                        BluetoothService.STATUS_DISCONNECTED, 0).sendToTarget();
+                stopAllBluetooth();
             }
         }
     };
+
+    public void stopAllBluetooth() {
+        setConnectionStatus(STATUS_DISCONNECTED);
+        // TODO PROBABLY NEED TO KILL MORE THINGS HERE
+        if(internalConnectedThread != null) {
+            internalConnectedThread.interrupt();
+            internalConnectedThread = null;
+        }
+
+        try{
+            if(internalBTSocket != null) internalBTSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        internalBTSocket = null;
+        // if we have an external handler, tell it that the status has updated
+        if(externalHandler != null)
+            externalHandler.obtainMessage(
+                    BluetoothService.CONN_STATUS_UPDATED,
+                    BluetoothService.STATUS_DISCONNECTED, 0).sendToTarget();
+    }
 }

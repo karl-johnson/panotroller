@@ -208,12 +208,15 @@ public class AcquisitionService extends Service {
                     // is this a response to the last instruction we sent?
                     // check by comparing instruction code against expected response code
                     // flipping first bit of android instruction gives arduino response code
-                    if(newInstruction.inst == (lastSentInstruction.inst ^ (byte) 0x80)) {
-                        // TODO verify data inside instruction is what we expect as well
-                        // increment photo counter
-                        if(newInstruction.inst == GeneratedConstants.INST_TOOK_PHOT) photoProgress++;
-                        isWaitingForResponse = false;
-                        updateAcquisition();
+                    if (lastSentInstruction != null) { // don't do this if we haven't sent one yet
+                        if (newInstruction.inst == (lastSentInstruction.inst ^ (byte) 0x80)) {
+                            // TODO verify data inside instruction is what we expect as well
+                            // increment photo counter
+                            if (newInstruction.inst == GeneratedConstants.INST_TOOK_PHOT)
+                                photoProgress++;
+                            isWaitingForResponse = false;
+                            updateAcquisition();
+                        }
                     }
                     break;
                 case BluetoothService.NEW_INSTRUCTION_CORRUPTED:

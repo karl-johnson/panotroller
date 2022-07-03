@@ -283,19 +283,26 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
                 case BluetoothService.NEW_INSTRUCTION_IN:
                     BluetoothInstruction returnInstruction = (BluetoothInstruction) msg.obj;
                     if(mBluetoothService.getConnectionStatus() == BluetoothService.STATUS_CONNECTING) {
+                        if(mBluetoothService.getBluetoothThread().isConnectionHealthy) {
+                            updateBluetoothStatus(BluetoothService.STATUS_CONNECTED, null);
+                        }
+                        // OUTDATED NOW CONNECTEDTHREAD HANDLES PINGING
                         // this is our first test ping being returned
                         // check that data from ping was preserved
+                        /*
                         if(returnInstruction.int1 == mBluetoothService.lastSentInstruction.int1
                         && returnInstruction.int2 == mBluetoothService.lastSentInstruction.int2) {
                             // use null BluetoothDevice to signal that device hasn't changed
                             updateBluetoothStatus(BluetoothService.STATUS_CONNECTED, null);
-                            long latency = System.currentTimeMillis() - mBluetoothService.lastSentInstructionTime;
-                            Log.d("LATENCY", "Latency from ping was " + latency + " ms");
+                            //long latency = System.currentTimeMillis() - mBluetoothService.lastSentInstructionTime;
+                            //Log.d("LATENCY", "Latency from ping was " + latency + " ms");
                         }
                         else {
 
                             Log.d("PING_VALUE_BAD", ConnectedThread.bytesToHex(returnInstruction.convertInstructionToBytes()));
                         }
+
+                         */
                     }
                     break;
                 case BluetoothService.NEW_INSTRUCTION_CORRUPTED:
