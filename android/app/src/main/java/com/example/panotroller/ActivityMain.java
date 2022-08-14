@@ -123,10 +123,11 @@ public class ActivityMain extends AppCompatActivity {
         public void handleMessage(Message msg) {
             // any new status or instruction in gives us reason to update status bar
             // may want to add a timer in the future as to prevent this from happening too much
-            Log.d("a","main handler");
-            if(msg.what == BluetoothService.CONN_STATUS_UPDATED || msg.what == BluetoothService.NEW_INSTRUCTION_IN) {
-                mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
-            }
+            //Log.d("a","main handler");
+            mBluetoothBar.update(mBluetoothService.getBluetoothBarInfo());
+            //if(msg.what == BluetoothService.CONN_STATUS_UPDATED || msg.what == BluetoothService.NEW_INSTRUCTION_IN) {
+
+            //}
         }
     }
 }

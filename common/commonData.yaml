@@ -86,6 +86,12 @@
         android_code: "0b11111110"
         arduino_string: "INST_STPD_ALL" # ok, I stopped everything!
         arduino_code: "0b01111110"
+    - bat:
+        android_string: "INST_GET_BAT" # stop everything!
+        android_code: "0b10011000"
+        arduino_string: "INST_GOT_BAT" # ok, I stopped everything!
+        arduino_code: "0b00011000"
+
     # FLOAT INSTRUCTIONS
     - ping_float:
         # ping a float to and from Arduino to check latency and data integrity

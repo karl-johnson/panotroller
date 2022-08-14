@@ -35,9 +35,10 @@ public class BluetoothService extends Service {
     public final static int STATUS_CONNECTED = 3; // Connection is active and good
 
     // constants for mHandler
-    public final static int CONN_STATUS_UPDATED = 0;
+    public final static int CONN_STATUS_UPDATED = 0; // used anytime latency or battery info updated
     public final static int NEW_INSTRUCTION_IN = 1;
     public final static int NEW_INSTRUCTION_CORRUPTED = 2;
+    public final static int BAT_STATUS_UPDATED = 3;
 
     // UUID randomly generated on 2021-09-01
     //private static final UUID BTMODULEUUID = UUID.fromString("967dbd75-51b3-422d-a9af-4430bec19f57");
@@ -197,17 +198,22 @@ public class BluetoothService extends Service {
         // doing it like this allows to expand what info is sent in the future more easily
         public int status;
         public long latency;
-        public BluetoothBarInfo(int statusIn, long latencyIn) {
-            status = statusIn; latency = latencyIn;
+        public double[] voltages;
+        public BluetoothBarInfo(int statusIn, long latencyIn, double[] voltagesIn) {
+            status = statusIn; latency = latencyIn; voltages = null;
+            if(voltagesIn != null) voltages = voltagesIn.clone();
         }
     }
 
     // simple way for any activity to quickly send data to update bluetooth bar fragment
     public BluetoothBarInfo getBluetoothBarInfo() {
         long lastLatency = -1;
-        if(internalConnectedThread != null)
+        double[] currentVoltages = null;
+        if(internalConnectedThread != null) {
             lastLatency = internalConnectedThread.getLastLatency();
-        return new BluetoothBarInfo(connectionStatus, lastLatency);
+            currentVoltages = internalConnectedThread.getCellVoltages();
+        }
+        return new BluetoothBarInfo(connectionStatus, lastLatency, currentVoltages);
     }
 
     /* BROADCAST RECEIVING STUFF */

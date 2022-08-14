@@ -68,6 +68,7 @@ public class Panorama implements Parcelable {
      */
     // NOTE RectF sign convention has (+,+) corner as BOTTOM right! (common image coordinate conv.)
     private RectF region = new RectF(0,0,0,0);
+
     public RectF getRegion() {return region;}
 
     public PanoramaSettings settings = new PanoramaSettings();

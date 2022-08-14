@@ -37,6 +37,9 @@ public class GeneratedConstants {
 	// Instruction pair: stop_all
 	public final static byte INST_STOP_ALL = (byte) 0b11111110;
 	public final static byte INST_STPD_ALL = (byte) 0b01111110;
+	// Instruction pair: bat
+	public final static byte INST_GET_BAT = (byte) 0b10011000;
+	public final static byte INST_GOT_BAT = (byte) 0b00011000;
 	// Instruction pair: ping_float
 	public final static byte INST_PING_FLOAT = (byte) 0b10000011;
 	public final static byte INST_PONG_FLOAT = (byte) 0b00000011;

@@ -14,6 +14,8 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
+import java.util.Arrays;
+
 public class FragmentBluetoothBar extends Fragment {
 
     /* MEMBERS */
@@ -112,7 +114,10 @@ public class FragmentBluetoothBar extends Fragment {
                     break;
                 case BluetoothService.STATUS_CONNECTED:
                     mTextView.setBackgroundColor(getContext().getColor(R.color.blue_connected));
-                    mTextView.setText("Connected (" + in.latency + "ms)");
+                    String voltageString = String.format("%.2f", in.voltages[0]) + "/" +
+                        String.format("%.2f", in.voltages[1]) + "/" +
+                        String.format("%.2f", in.voltages[2]) + " V";
+                    mTextView.setText("Connected (" + in.latency + "ms, " + voltageString + ")");
                     break;
             }
         }

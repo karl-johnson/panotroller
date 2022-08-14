@@ -38,6 +38,9 @@ typedef enum {
 	// Instruction pair: stop_all
 	INST_STOP_ALL = 0b11111110,
 	INST_STPD_ALL = 0b01111110,
+	// Instruction pair: bat
+	INST_GET_BAT = 0b10011000,
+	INST_GOT_BAT = 0b00011000,
 	// Instruction pair: ping_float
 	INST_PING_FLOAT = 0b10000011,
 	INST_PONG_FLOAT = 0b00000011

@@ -71,6 +71,9 @@ void setup() {
   stepperY.setMaxSpeed(400.0);
   stepperY.setAcceleration(500.0);
 
+  //
+  pinMode(STEPPER_SLEEP, INPUT_PULLUP);
+
   pinMode(MS1, OUTPUT);
   pinMode(MS2, OUTPUT);
   setMicrostep(MOTOR_DEFAULT_MICROSTEP);
@@ -244,6 +247,14 @@ void executeInstruction(BluetoothInstruction in) {
         // construct hex color code from 2 ints
         setLedColor((((unsigned long) in.intValue1) << 16) | in.intValue2);
         BluetoothInstruction(INST_CNF_LED,in.intValue1,in.intValue2).send(&bluetooth);
+        break;
+      case INST_GET_BAT:
+        // want to send all 3  cells in 32 bits,
+        // 8 bits of precision is fine, so use similar method as LED
+        BluetoothInstruction(INST_GOT_BAT,
+          analogRead(SENSE1) >> 2,
+          ((analogRead(SENSE2) >> 2) << 8) | (analogRead(SENSE3) >> 2)
+          ).send(&bluetooth);
         break;
       default:
         Serial.println("Unhandled int instruction");
