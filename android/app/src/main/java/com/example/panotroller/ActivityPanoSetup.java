@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -54,6 +55,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
+    private ViewportView mViewport;
     private JoystickView mJoystick;
     private ImageButton mAddButton;
     private ImageButton mRemoveButton;
@@ -71,7 +73,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
         mAddButton = (ImageButton) findViewById(R.id.add_point);
         mRemoveButton = (ImageButton) findViewById(R.id.remove_point);
         mSettingsButton = (ImageButton) findViewById(R.id.pano_settings);
-
+        mViewport = (ViewportView) findViewById(R.id.pano_setup_viewer);
+        mViewport.updatePanorama(mPanorama);
         // set up button actions
         mAddButton.setOnClickListener(this::onAddButton);
         mRemoveButton.setOnClickListener(this::onRemoveButton);
@@ -284,24 +287,26 @@ public class ActivityPanoSetup extends AppCompatActivity {
             if(msg.what == BluetoothService.NEW_INSTRUCTION_IN) {
                 BluetoothInstruction newInstruction = (BluetoothInstruction) msg.obj;
                 if(newInstruction.inst == GeneratedConstants.INST_GOT_POS) {
+                    Point newPosition = new Point(newInstruction.int1, newInstruction.int2);
+                    PointF newPositionDeg = mPositionConverter.convertStepsToDegrees(newPosition);
                     if(mHasOutstandingAdd) {
-                        // get position (in steps) out of instruction
-                        Point newPosition = new Point(newInstruction.int1, newInstruction.int2);
                         Log.d("PANORAMA", "Adding point " + newPosition.toString());
                         // convert this step position to degree pos and add to panorama
-                        mPanorama.addPoint(mPositionConverter.convertStepsToDegrees(newPosition));
+                        mPanorama.addPoint(newPositionDeg);
                         mHasOutstandingAdd = false;
                         // haptic feedback on success
                         mAddButton.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+                        mViewport.updatePanorama(mPanorama);
                     }
                     else if(mHasOutstandingRemove) {
-                        Point newPosition = new Point(newInstruction.int1, newInstruction.int2);
                         Log.d("PANORAMA", "Removing point " + newPosition.toString());
                         // convert step position and remove nearest point in panorama
-                        mPanorama.removeNearestPoint(mPositionConverter.convertStepsToDegrees(newPosition));
+                        mPanorama.removeNearestPoint(newPositionDeg);
                         mHasOutstandingRemove = false;
                         mRemoveButton.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+                        mViewport.updatePanorama(mPanorama);
                     }
+                    mViewport.updateCameraPos(newPositionDeg);
                 }
             }
             // any new status or instruction in gives us reason to update status bar

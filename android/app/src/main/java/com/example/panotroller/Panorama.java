@@ -169,6 +169,7 @@ public class Panorama implements Parcelable {
         Point tileNum = new Point(); // number of tiles in each direction
         // trig to compute AOV + reduce delta by desired overlap
         Log.d("PANORAMA", "Focal length " + settings.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
+        // TODO update to using PanoramaSettings FOV computation
         tileDelta.x = 2.0f * (float) Math.atan2(camera.xSize/2,settings.focalLength) * (1.0f-settings.overlap);
         tileDelta.y = 2.0f * (float) Math.atan2(camera.ySize/2,settings.focalLength) * (1.0f-settings.overlap);
         tileNum.x = (int) Math.ceil(region.width()/tileDelta.x);
@@ -366,6 +367,12 @@ public class Panorama implements Parcelable {
         return new PointF(originIn.x + xIndexIn*deltaIn.x,originIn.y + yIndexIn*deltaIn.y);
     }
 
+    public PointF getCameraFovDeg() {
+        PanoramaCamera camera = builtInCameras.get(settings.cameraName);
+        return new PointF(2.0f * (float) (180/Math.PI) * (float) Math.atan2(camera.xSize/2,settings.focalLength),
+                2.0f * (float) (180/Math.PI) * (float) Math.atan2(camera.ySize/2,settings.focalLength));
+    }
+
     public static class PanoramaSettings implements Parcelable {
         // class to encapsulate panorama settings that can be edited by PanoramaSettingsMenu
         // does not include panorama region and defining points etc.
@@ -395,6 +402,8 @@ public class Panorama implements Parcelable {
         }
 
         /* PARCELABLE METHODS */
+
+
 
         protected PanoramaSettings(Parcel in) {
             order = in.readInt();
