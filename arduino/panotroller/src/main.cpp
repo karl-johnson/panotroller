@@ -25,6 +25,12 @@
 // so if we don't get a set speed command for this amount of time, stop motors
 #define MOTOR_TIMEOUT 1000 // (ms)
 #define MOTOR_DEFAULT_MICROSTEP 8
+// TODO implement
+#define DO_INVERT_X_INPUT false
+#define DO_INVERT Y_INPUT false
+#define DO_INVERT_X_OUTPUT false
+#define DO_INVERT_Y_OUTPUT true
+
 
 #define DEFAULT_SHUTTER_SPEED 100
 
@@ -68,8 +74,9 @@ void setup() {
   // configure stepper motors
   stepperX.setMaxSpeed(400.0);
   stepperX.setAcceleration(500.0);
+  stepperX.setPinsInverted(DO_INVERT_X_OUTPUT);
   stepperY.setMaxSpeed(400.0);
-  stepperY.setAcceleration(500.0);
+  stepperY.setAcceleration(DO_INVERT_Y_OUTPUT);
 
   //
   pinMode(STEPPER_SLEEP, INPUT_PULLUP);
@@ -98,8 +105,11 @@ void loop() {
     // poll SoftwareSerial bluetooth connection
     updateRx(&bluetooth, inputByteArray, &isMessageReady);
     if(isMessageReady) {
-      Serial.println("New message");
+      Serial.println("N");
       // updateRx has signaled that an incoming message is ready
+      Serial.print("GOT: ");
+      for(int i = 0; i < MESSAGE_LENGTH; i++) Serial.print(inputByteArray[i], HEX);
+      Serial.println();
       latestInstruction.decodeFromBytes(inputByteArray);
       if(latestInstruction.isCorrupted) {
         // Uh oh, the checksum on this instruction failed
@@ -192,14 +202,18 @@ void executeInstruction(BluetoothInstruction in) {
         isPointMode = (bool) in.intValue1; // unnecesary cast for clarity
         BluetoothInstruction(INST_CNF_MODE,in.floatValue).send(&bluetooth);
       case INST_SET_MTR:
-        stepperX.setSpeed(latestInstruction.intValue1);
-        stepperY.setSpeed(latestInstruction.intValue2);
+        stepperX.setSpeed(-latestInstruction.intValue1);
+        stepperY.setSpeed(-latestInstruction.intValue2);
         /*
         Serial.print("Got speeds ");
         Serial.print(latestInstruction.intValue1);
         Serial.print(" ");
         Serial.println(latestInstruction.intValue2);*/
         lastSetSpeedTimer = millis(); // update
+        // Send current position back to app
+        BluetoothInstruction(INST_GOT_POS,
+          stepperX.currentPosition(),
+          stepperY.currentPosition()).send(&bluetooth);
         break;
       case INST_MOVE_ABS:
         stepperX.moveTo(in.intValue1);
@@ -207,6 +221,7 @@ void executeInstruction(BluetoothInstruction in) {
         isOutstandingMove = true;
         break;
       case INST_GET_POS:
+        Serial.println("INST_GET_POS");
         BluetoothInstruction(INST_GOT_POS,
           stepperX.currentPosition(),
           stepperY.currentPosition()).send(&bluetooth);

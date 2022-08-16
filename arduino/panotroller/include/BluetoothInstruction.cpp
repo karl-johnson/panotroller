@@ -46,9 +46,9 @@ void BluetoothInstruction::send(SoftwareSerial* serialDevice) {
   // now write to serialDevice along with start byte
   serialDevice->write((byte) START_BYTE);
   serialDevice->write(messageSend, MESSAGE_LENGTH);
-  Serial.print("Sent: ");
-  for(int i = 0; i < MESSAGE_LENGTH; i++) Serial.print(messageSend[i], HEX);
-  Serial.println();
+  //Serial.print("Sent: ");
+  //for(int i = 0; i < MESSAGE_LENGTH; i++) Serial.print(messageSend[i], HEX);
+  //Serial.println();
 
 }
 

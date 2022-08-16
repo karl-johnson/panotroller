@@ -196,9 +196,11 @@ public class ActivityPanoSetup extends AppCompatActivity {
         mJoystick.setOnMoveListener(new JoystickView.OnMoveListener() {
             @Override
             public void onMove(int angle, int strength) {
-                // flip Y axis so DOWN means +Y (to align with Android.Point sign convention)
-                sendMotorVels((short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.cos(Math.toRadians(angle))),
-                        (short) (MAX_JOY_MOTOR_SPEED * -0.01 * strength * Math.sin(Math.toRadians(angle))));
+                // follow Point() and Rect() sign convention everywhere possible
+                // want joystick down -> +Y
+                // joystick right -> +X
+                sendMotorVels((short) (MAX_JOY_MOTOR_SPEED * -0.01 * strength * Math.cos(Math.toRadians(angle))),
+                        (short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.sin(Math.toRadians(angle))));
             }
         }, JOY_UPDATE_FREQUENCY);
     }
@@ -290,7 +292,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
                     Point newPosition = new Point(newInstruction.int1, newInstruction.int2);
                     PointF newPositionDeg = mPositionConverter.convertStepsToDegrees(newPosition);
                     if(mHasOutstandingAdd) {
-                        Log.d("PANORAMA", "Adding point " + newPosition.toString());
+                        Log.d("PANORAMA", "Adding point " + newPositionDeg.toString());
                         // convert this step position to degree pos and add to panorama
                         mPanorama.addPoint(newPositionDeg);
                         mHasOutstandingAdd = false;
@@ -299,7 +301,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
                         mViewport.updatePanorama(mPanorama);
                     }
                     else if(mHasOutstandingRemove) {
-                        Log.d("PANORAMA", "Removing point " + newPosition.toString());
+                        Log.d("PANORAMA", "Removing point " + newPositionDeg.toString());
                         // convert step position and remove nearest point in panorama
                         mPanorama.removeNearestPoint(newPositionDeg);
                         mHasOutstandingRemove = false;

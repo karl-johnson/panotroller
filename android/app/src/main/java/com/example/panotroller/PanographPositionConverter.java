@@ -2,6 +2,7 @@ package com.example.panotroller;
 
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.util.Log;
 
 // position converter for my implementation of the pan-tilt device
 public class PanographPositionConverter extends PositionConverter {
@@ -21,7 +22,7 @@ public class PanographPositionConverter extends PositionConverter {
         float motorSteps = 200f;
         // belt reduction on motors
         float reduction = 5f;
-        outputDegreesPerStep = (float) ((2*Math.PI)/(motorSteps*microstep* reduction));
+        outputDegreesPerStep = (float) (360/(motorSteps*microstep* reduction));
     }
 
     // for microstepping changes we need to be able to know/update convertStepToDegrees(0,0)
@@ -45,9 +46,12 @@ public class PanographPositionConverter extends PositionConverter {
                 Math.round((posDegrees.y - origin.y)/outputDegreesPerStep));
     }
     public PointF convertStepsToDegrees(Point posSteps) {
-        // position in steps is a position purely relative to origin
-        return new PointF(
+        Log.d("CONVERT_STEPS", "In: " + posSteps.toString());
+        PointF output = new PointF(
                 origin.x + outputDegreesPerStep*posSteps.x,
                 origin.x + outputDegreesPerStep*posSteps.y);
+        // position in steps is a position purely relative to origin
+        Log.d("CONVERT_STEPS", "Out: " + output.toString());
+        return output;
     }
 }

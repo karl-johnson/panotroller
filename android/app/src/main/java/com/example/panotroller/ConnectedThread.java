@@ -38,7 +38,7 @@ public class ConnectedThread extends Thread {
     private double[] cellVoltages = {0, 0, 0};
     public double[] getCellVoltages() {return cellVoltages;}
 
-    public final static int BAT_PERIOD = 3000; // how often to check battery, ms
+    public final static int BAT_PERIOD = 5000; // how often to check battery, ms
 
     /* CONSTANTS */
     public final static int MAX_PINGS = 3; // how many unanswered pings before we question our connection
@@ -114,7 +114,7 @@ public class ConnectedThread extends Thread {
         // pretty simple to actually write data!
         //Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
         byte[] sendBytes = inputInstruction.convertInstructionToBytes();
-        //Log.d("BYTES_SENT","0x"+bytesToHex(sendBytes));
+        Log.d("BYTES_SENT","0x"+bytesToHex(sendBytes));
         try {
             mOutStream.write(sendBytes);
         } catch (IOException e) {
@@ -166,7 +166,7 @@ public class ConnectedThread extends Thread {
         writeArduinoInstruction(new BluetoothInstruction(
                 GeneratedConstants.INST_PING_INT,
                 lastSentPingData, lastSentPingData));
-        //Log.d("OUTSTANDING_PINGS",String.valueOf(numOutstandingPings));
+        Log.d("OUTSTANDING_PINGS",String.valueOf(numOutstandingPings));
         if(numOutstandingPings > MAX_PINGS) {
             // update connection to "Connecting" and let BT service know of a change
             isConnectionHealthy = false;
@@ -178,12 +178,14 @@ public class ConnectedThread extends Thread {
         // see if an instruction we received is a ping
         // if so, update everything
         // TODO this will give false positives once every couple decades or something
+
+        Log.d("CHECK_IF_PING", "Called");
         if(bluetoothInstructionIn.inst == GeneratedConstants.INST_PONG_INT) {
             if (bluetoothInstructionIn.int1 == lastSentPingData) {
                 // this doesn't account for us having multiple outstanding + get an old ping
                 // but if we have a healthy connection, we should get the most recent one soon enough
                 lastLatency = System.currentTimeMillis() - lastSentPingTime;
-                //Log.d("LATENCY", String.valueOf(lastLatency));
+                Log.d("LATENCY", String.valueOf(lastLatency));
                 numOutstandingPings = 0;
                 // if we were unhealthy but are now healthy, need to update everyone else
                 if (isConnectionHealthy = false) {
@@ -202,7 +204,7 @@ public class ConnectedThread extends Thread {
         writeArduinoInstruction(new BluetoothInstruction(
                 GeneratedConstants.INST_GET_BAT,
                 (short) 0, (short) 0));
-        Log.d("ASKED_BAT","yep");
+        //Log.d("ASKED_BAT","yep");
     }
 
     private void checkIfCellUpdate(BluetoothInstruction bluetoothInstructionIn) {
@@ -216,7 +218,7 @@ public class ConnectedThread extends Thread {
                 cellVoltages[i] = adcToVoltage(adcCounts[i]);
             }
         }
-        Log.d("GOT_BAT", Arrays.toString(cellVoltages));
+        //Log.d("GOT_BAT", Arrays.toString(cellVoltages));
         mHandler.obtainMessage(BluetoothService.BAT_STATUS_UPDATED).sendToTarget();
     }
 

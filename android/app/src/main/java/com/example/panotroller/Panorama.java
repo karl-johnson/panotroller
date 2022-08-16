@@ -67,6 +67,7 @@ public class Panorama implements Parcelable {
      This is why 360's are handled differently at the tile generation stage
      */
     // NOTE RectF sign convention has (+,+) corner as BOTTOM right! (common image coordinate conv.)
+    // we rely on the position in DEGREES being passed in
     private RectF region = new RectF(0,0,0,0);
 
     public RectF getRegion() {return region;}
@@ -125,6 +126,7 @@ public class Panorama implements Parcelable {
         // TODO WRAP INPUT?
         definingPoints.add(in);
         updateRegionFromPoints();
+        Log.d("PANORAMA", "Added point, points are " + definingPoints.toString());
         Log.d("PANORAMA", "Added point, new region is " + region.toString());
     }
 
@@ -147,7 +149,10 @@ public class Panorama implements Parcelable {
         }
         definingPoints.remove(nearestPoint); // remove the nearest point we found
         updateRegionFromPoints();
-        Log.d("PANORAMA", "Removed point, new region is " + region.toString());
+        if(region != null)
+            Log.d("PANORAMA", "Removed point, new region is " + region.toString());
+        else
+            Log.d("PANORAMA", "Removed point, new region is null.");
     }
 
     public List<PointF> generateTiles() {
@@ -169,9 +174,10 @@ public class Panorama implements Parcelable {
         Point tileNum = new Point(); // number of tiles in each direction
         // trig to compute AOV + reduce delta by desired overlap
         Log.d("PANORAMA", "Focal length " + settings.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
-        // TODO update to using PanoramaSettings FOV computation
-        tileDelta.x = 2.0f * (float) Math.atan2(camera.xSize/2,settings.focalLength) * (1.0f-settings.overlap);
-        tileDelta.y = 2.0f * (float) Math.atan2(camera.ySize/2,settings.focalLength) * (1.0f-settings.overlap);
+        // TODO - some degree versus radians confusion! still fixing
+        PointF cameraFov = getCameraFovDeg();
+        tileDelta.x = cameraFov.x * (1.0f-settings.overlap);
+        tileDelta.y = cameraFov.y * (1.0f-settings.overlap);
         tileNum.x = (int) Math.ceil(region.width()/tileDelta.x);
         tileNum.y = (int) Math.ceil(region.height()/tileDelta.y);
         Log.d("PANORAMA", "Generate tiles calculated tile numbers " + tileNum.toString() + " and tile deltas " + tileDelta.toString());
@@ -264,10 +270,12 @@ public class Panorama implements Parcelable {
     private RectF getBoundingBox(List<PointF> pointsIn) {
         if(pointsIn == null || pointsIn.isEmpty()) return null; // no points = no bounding box
         RectF out = new RectF();
+        boolean isFirstPoint = true;
         for(PointF thisPoint : pointsIn) {
-            if(out == null) { // this is the first point - set 0-width box
+            if(isFirstPoint) { // this is the first point - set 0-width box
                 out.left = out.right = thisPoint.x;
                 out.bottom = out.top = thisPoint.y;
+                isFirstPoint = false;
             }
             else { // for any other point, expand bounding box for every point that lies outside it
                 // X coordinates
