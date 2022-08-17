@@ -110,6 +110,7 @@ public class AcquisitionService extends Service {
 
     private void updateAcquisition() {
         // only do things if we're un-paused and not still waiting on an instruction
+        // TODO implement re-trying instructions if we wait long enough for a response
         if(isRunning && !isWaitingForResponse) {
             // advance iterator and send next instruction
             if(instructionListIterator.hasNext()) {

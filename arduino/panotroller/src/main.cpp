@@ -25,9 +25,8 @@
 // so if we don't get a set speed command for this amount of time, stop motors
 #define MOTOR_TIMEOUT 1000 // (ms)
 #define MOTOR_DEFAULT_MICROSTEP 8
-// TODO implement
-#define DO_INVERT_X_INPUT false
-#define DO_INVERT Y_INPUT false
+// invert what direction AccelStepper assigns to positive/negative
+// this makes the output follow sign convention
 #define DO_INVERT_X_OUTPUT false
 #define DO_INVERT_Y_OUTPUT true
 
@@ -76,7 +75,8 @@ void setup() {
   stepperX.setAcceleration(500.0);
   stepperX.setPinsInverted(DO_INVERT_X_OUTPUT);
   stepperY.setMaxSpeed(400.0);
-  stepperY.setAcceleration(DO_INVERT_Y_OUTPUT);
+  stepperY.setAcceleration(500.0);
+  stepperY.setPinsInverted(DO_INVERT_Y_OUTPUT);
 
   //
   pinMode(STEPPER_SLEEP, INPUT_PULLUP);
@@ -114,6 +114,7 @@ void loop() {
       if(latestInstruction.isCorrupted) {
         // Uh oh, the checksum on this instruction failed
         Serial.println("nano got corrupted instruction lmao");
+        // need to clear error code from latestInstruction
         // TODO send error code back to Android
       }
       else {
@@ -202,8 +203,11 @@ void executeInstruction(BluetoothInstruction in) {
         isPointMode = (bool) in.intValue1; // unnecesary cast for clarity
         BluetoothInstruction(INST_CNF_MODE,in.floatValue).send(&bluetooth);
       case INST_SET_MTR:
-        stepperX.setSpeed(-latestInstruction.intValue1);
-        stepperY.setSpeed(-latestInstruction.intValue2);
+        // important that there are no negatives here
+        // to ensure sign convention consistency (want positive inputs coming
+        // over serial to result in increasing position)
+        stepperX.setSpeed(latestInstruction.intValue1);
+        stepperY.setSpeed(latestInstruction.intValue2);
         /*
         Serial.print("Got speeds ");
         Serial.print(latestInstruction.intValue1);

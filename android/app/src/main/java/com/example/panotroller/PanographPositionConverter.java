@@ -15,6 +15,12 @@ public class PanographPositionConverter extends PositionConverter {
     }
     // conversion parameters that can change
     private int microstep = GeneratedConstants.DEFAULT_MICROSTEP; // microsteps/full step
+
+    public void setMicrostep(int microstep) {
+        this.microstep = microstep;
+        updateOutputDegreesPerStep();
+    }
+
     private float outputDegreesPerStep = 0; // same for both axes
     private void updateOutputDegreesPerStep() {
         // mechanical parameters that won't change during program
@@ -46,12 +52,12 @@ public class PanographPositionConverter extends PositionConverter {
                 Math.round((posDegrees.y - origin.y)/outputDegreesPerStep));
     }
     public PointF convertStepsToDegrees(Point posSteps) {
-        Log.d("CONVERT_STEPS", "In: " + posSteps.toString());
+        //Log.d("CONVERT_STEPS", "In: " + posSteps.toString());
         PointF output = new PointF(
                 origin.x + outputDegreesPerStep*posSteps.x,
                 origin.x + outputDegreesPerStep*posSteps.y);
         // position in steps is a position purely relative to origin
-        Log.d("CONVERT_STEPS", "Out: " + output.toString());
+        //Log.d("CONVERT_STEPS", "Out: " + output.toString());
         return output;
     }
 }

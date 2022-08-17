@@ -58,6 +58,7 @@ void BluetoothInstruction::decodeFromBytes(byte inBytes[MESSAGE_LENGTH]) {
     isCorrupted = true;
     return;
   }
+  isCorrupted = false;
   if(inBytes[0]%2) { // if LSB is 1, this instruction is for a float value
     isFloatInstruction = true;
     this->inst = inBytes[0];

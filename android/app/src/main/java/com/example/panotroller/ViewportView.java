@@ -13,6 +13,8 @@ import android.view.View;
 
 import androidx.annotation.Nullable;
 
+import java.util.List;
+
 import static java.lang.Math.abs;
 
 public class ViewportView extends View {
@@ -20,7 +22,7 @@ public class ViewportView extends View {
 
 
 
-    private RectF axisLimits = new RectF(-180,90,180,-90);
+    private RectF axisLimits = new RectF(-180,-90,180,90);
     private Rect axisRegion = new Rect(0,0,0,0); // to preserve aspect ratio in degrees, don't use full viewport
 
     private Panorama currentPanorama;
@@ -30,6 +32,7 @@ public class ViewportView extends View {
     private Paint mAxisRegionPaint;
     private Paint mPanoRegionPaint;
     private Paint mCameraRegionPaint;
+    private Paint mPointsPaint;
 
     public ViewportView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -38,23 +41,26 @@ public class ViewportView extends View {
 
         TypedArray styledAttributes = context.obtainStyledAttributes(attrs,R.styleable.ViewportView);
 
-        int panoRegionColor;
-        int cameraRegionColor;
+        int panoRegionColor, cameraRegionColor, definingPointsColor;
 
         int DEFAULT_PANO_COLOR = context.getColor(R.color.green_accent);
-        int DEFAULT_CAM_COLOR = context.getColor(R.color.white);
+        int DEFAULT_CAM_COLOR = context.getColor(R.color.green_accent);
+        int DEFAULT_POINTS_COLOR = context.getColor(R.color.white);
 
         try {
             panoRegionColor = styledAttributes.getColor(R.styleable.ViewportView_panoRegionColor, DEFAULT_PANO_COLOR);
             cameraRegionColor = styledAttributes.getColor(R.styleable.ViewportView_camRegionColor, DEFAULT_CAM_COLOR);
+            definingPointsColor = styledAttributes.getColor(R.styleable.ViewportView_camRegionColor, DEFAULT_POINTS_COLOR);
+
         } finally {
             styledAttributes.recycle();
         }
 
+        //setBackground(null);
 
         mAxisRegionPaint = new Paint();
         mAxisRegionPaint.setAntiAlias(true);
-        mAxisRegionPaint.setColor(0x999999);
+        mAxisRegionPaint.setColor(0xff999999);
         mAxisRegionPaint.setStyle(Paint.Style.FILL);
 
         mPanoRegionPaint = new Paint();
@@ -66,6 +72,11 @@ public class ViewportView extends View {
         mCameraRegionPaint.setAntiAlias(true);
         mCameraRegionPaint.setColor(cameraRegionColor);
         mCameraRegionPaint.setStyle(Paint.Style.STROKE);
+
+        mPointsPaint = new Paint();
+        mPointsPaint.setAntiAlias(true);
+        mPointsPaint.setColor(definingPointsColor);
+        mPointsPaint.setStyle(Paint.Style.STROKE);
     }
 
     @Override
@@ -74,7 +85,7 @@ public class ViewportView extends View {
         // calculate axisRegion
         double desiredAspect = abs(axisLimits.width()/axisLimits.height());
         // there's probably a built-in way to do this
-        Log.d("VIEWPORT", "Size changed " + w + " " + h + " " + desiredAspect);
+        //Log.d("VIEWPORT", "Size changed " + w + " " + h + " " + desiredAspect);
         if(w >= desiredAspect*(double) h) {
             // size of the View is too wide for the desired aspect ratio
             // "black bars" will be on the sides
@@ -91,7 +102,7 @@ public class ViewportView extends View {
             axisRegion.right = w;
             int scaledHeight = (int) (w/desiredAspect);
 
-            Log.d("VIEWPORT", "Size changed " + h + " " + scaledHeight);
+            //Log.d("VIEWPORT", "Size changed " + h + " " + scaledHeight);
             axisRegion.top = (h-scaledHeight)/2;
             axisRegion.bottom = axisRegion.top + scaledHeight;
         }
@@ -99,24 +110,28 @@ public class ViewportView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-
-        // canvas.drawRect(0, 0, getWidth(), getHeight(),
-        if(doDrawPanorama) {
-            RectF panoRegionDeg = currentPanorama.getRegion();
-            if(panoRegionDeg != null)
-                canvas.drawRect(scaleRectToAxes(panoRegionDeg), mPanoRegionPaint);
-        }
-        if(cameraRegion != null) {
-            Log.d("VIEWPORT", "Drawing camera region: " + scaleRectToAxes(cameraRegion).toString());
-            canvas.drawRect(scaleRectToAxes(cameraRegion), mCameraRegionPaint);
-        }
+        // TODO could optimize this using
+        //  an occasionally updated background layer + rapidly updated camera layer
         // draw axes rectangle
         if(axisRegion != null) {
-            canvas.drawRect(axisRegion, mPanoRegionPaint);
-            Log.d("VIEWPORT", "Drew axis region " + axisRegion.toString());
+            canvas.drawRect(axisRegion, mAxisRegionPaint);
+            //Log.d("VIEWPORT", "Drew axis region " + axisRegion.toString());
         }
-        else {
-            Log.w("VIEWPORT", "Axis region is null!");
+        // canvas.drawRect(0, 0, getWidth(), getHeight(),
+        if(doDrawPanorama) {
+            if (currentPanorama != null) {
+                RectF panoRegionDeg = currentPanorama.getRegion();
+                if(panoRegionDeg != null)
+                    canvas.drawRect(scaleRectToAxes(panoRegionDeg), mPanoRegionPaint);
+                List<PointF> currentPoints = currentPanorama.getDefiningPoints();
+                for(PointF thisPoint : currentPoints) {
+                    canvas.drawRect(scaleRectToAxes(getCameraRegionFromCenter(thisPoint)), mPointsPaint);
+                }
+            }
+        }
+        if(cameraRegion != null) {
+            //Log.d("VIEWPORT", "Drawing camera region: " + scaleRectToAxes(cameraRegion).toString());
+            canvas.drawRect(scaleRectToAxes(cameraRegion), mCameraRegionPaint);
         }
     }
 
@@ -129,20 +144,24 @@ public class ViewportView extends View {
 
     public void updateCameraPos(PointF newPositionDeg) {
         cameraRegionCenter = newPositionDeg;
-        Log.d("VIEWPORT", "New center: " + String.valueOf(newPositionDeg));
+        //Log.d("VIEWPORT", "New center: " + String.valueOf(newPositionDeg));
         updateCameraFov();
     }
 
     private void updateCameraFov() {
-        if(cameraRegion == null)
-            cameraRegion = new RectF(0,0,0,0);
-        PointF cameraDimensions = currentPanorama.getCameraFovDeg();
-        cameraRegion.left = cameraRegionCenter.x - cameraDimensions.x/2;
-        cameraRegion.right = cameraRegionCenter.x + cameraDimensions.x/2;
-        cameraRegion.top = cameraRegionCenter.y - cameraDimensions.y/2;
-        cameraRegion.bottom = cameraRegionCenter.y + cameraDimensions.y/2;
-        Log.d("VIEWPORT", "New FOV: " + cameraRegion.toString());
+        cameraRegion = getCameraRegionFromCenter(cameraRegionCenter);
+        //Log.d("VIEWPORT", "New FOV: " + cameraRegion.toString());
         invalidate();
+    }
+
+    private RectF getCameraRegionFromCenter(PointF center) {
+        RectF thisRegion = new RectF(0,0,0,0);
+        PointF cameraDimensions = currentPanorama.getCameraFovDeg();
+        thisRegion.left = center.x - cameraDimensions.x/2;
+        thisRegion.right = center.x + cameraDimensions.x/2;
+        thisRegion.top = center.y - cameraDimensions.y/2;
+        thisRegion.bottom = center.y + cameraDimensions.y/2;
+        return thisRegion;
     }
 
     private RectF scaleRectToAxes(RectF rectIn) {

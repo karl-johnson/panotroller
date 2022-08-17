@@ -35,7 +35,7 @@ public class BluetoothService extends Service {
     public final static int STATUS_CONNECTED = 3; // Connection is active and good
 
     // constants for mHandler
-    public final static int CONN_STATUS_UPDATED = 0; // used anytime latency or battery info updated
+    public final static int CONN_STATUS_UPDATED = 0; // used anytime latency info updated
     public final static int NEW_INSTRUCTION_IN = 1;
     public final static int NEW_INSTRUCTION_CORRUPTED = 2;
     public final static int BAT_STATUS_UPDATED = 3;
@@ -51,6 +51,7 @@ public class BluetoothService extends Service {
 
     // the BluetoothSocket is the abstraction for "where" the other device connects
     private BluetoothSocket internalBTSocket = null;
+    public BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
     // this is the thread which independently handles incoming and outgoing data over bluetooth
     private ConnectedThread internalConnectedThread = null;
 
@@ -177,18 +178,60 @@ public class BluetoothService extends Service {
             // for now, only need to look at timing of message received to compute latency
             // eventually may want to use this to auto re-send corrupted messages etc.
             if(msg.what == CONN_STATUS_UPDATED) {
-                // only thing we need to do (for now) is update connection status
-                if(internalConnectedThread != null) {
-                    if(!internalConnectedThread.isConnectionHealthy) {
-                        setConnectionStatus(STATUS_CONNECTING);
+                // check status of bluetooth objects and update clients with new status
+                checkConnectionStatus();
+                // no need to send along what ConnectedThread told us - we just sent an update
+            }
+            // all other message types can simply be forwarded on
+            else {
+                if(msg.what == NEW_INSTRUCTION_IN) {
+                    if(connectionStatus != STATUS_CONNECTED) {
+                        checkConnectionStatus();
                     }
                 }
+                if(externalHandler != null) externalHandler.sendMessage(Message.obtain(msg));
+                else Log.w("MESSAGE_NOT_SENT",
+                        "Message didn't exit BTService because externalHandler is null!");
             }
-            // now that we're done with the message, send it along
-            if(externalHandler != null) externalHandler.sendMessage(Message.obtain(msg));
-            else Log.w("MESSAGE_NOT_SENT",
-                    "Message didn't exit BTService because externalHandler is null!");
+
         }
+    }
+
+    public void setStatusConnecting() {
+        // there is ONE circumstance where we want an external client to update the status
+        // want the status to change to "connecting" ASAP after a device is selected
+        connectionStatus = STATUS_CONNECTING;
+    }
+
+    public void checkConnectionStatus() {
+        // this method allows this service to fully maintain its own connection status
+        // in some situations clients need to call this manually for the most up-to-date info
+        // if the adapter is disabled, the user has turned off bluetooth
+        Log.d("BT_SERVICE", "checkConnectionStatus()");
+        if(!mBTAdapter.isEnabled()) {
+            connectionStatus = STATUS_OFF;
+        }
+        else if(internalConnectedThread != null) {
+            if(internalConnectedThread.isConnectionHealthy) {
+                // if we have a healthy connection, we're connected
+                connectionStatus = STATUS_CONNECTED;
+            }
+            else {
+                // if the thread exists but we have not yet confirmed that we can talk to the
+                // Arduino on the other end, show it as "CONNECTING"
+                connectionStatus = STATUS_CONNECTING;
+            }
+        }
+        else {
+            // no thread means we must be disconnected
+            connectionStatus = STATUS_DISCONNECTED;
+        }
+        if(externalHandler != null) {
+            // for safety, if we called this, we should update any clients bound to this service
+            externalHandler.obtainMessage(BluetoothService.CONN_STATUS_UPDATED).sendToTarget();
+        }
+        else Log.w("MESSAGE_NOT_SENT",
+                "Message didn't exit BTService because externalHandler is null!");
     }
 
     /* BLUETOOTH BAR HELPERS */
@@ -208,7 +251,7 @@ public class BluetoothService extends Service {
     // simple way for any activity to quickly send data to update bluetooth bar fragment
     public BluetoothBarInfo getBluetoothBarInfo() {
         long lastLatency = -1;
-        double[] currentVoltages = null;
+        double[] currentVoltages = null; // dangerous :/
         if(internalConnectedThread != null) {
             lastLatency = internalConnectedThread.getLastLatency();
             currentVoltages = internalConnectedThread.getCellVoltages();

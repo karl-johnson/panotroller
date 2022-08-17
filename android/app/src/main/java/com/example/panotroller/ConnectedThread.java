@@ -88,7 +88,7 @@ public class ConnectedThread extends Thread {
                                 Log.e("BAD_ENC_MESSAGE_LENGTH",e2.getMessage());
                             }
                             byteIndex = 0; // overwrite old message
-                            messageInProgress = false; // message is over
+                            messageInProgress = false; // mefssage is over
                         }
                     }
                     else if(inByte == GeneratedConstants.START_BYTE) {
@@ -170,6 +170,7 @@ public class ConnectedThread extends Thread {
         if(numOutstandingPings > MAX_PINGS) {
             // update connection to "Connecting" and let BT service know of a change
             isConnectionHealthy = false;
+            Log.d("CONNECTED_THREAD", "Set connection to unhealthy");
             mHandler.obtainMessage(BluetoothService.CONN_STATUS_UPDATED).sendToTarget();
         }
     }
@@ -179,7 +180,7 @@ public class ConnectedThread extends Thread {
         // if so, update everything
         // TODO this will give false positives once every couple decades or something
 
-        Log.d("CHECK_IF_PING", "Called");
+        //Log.d("CONNECTED_THREAD", "checkIfPing()");
         if(bluetoothInstructionIn.inst == GeneratedConstants.INST_PONG_INT) {
             if (bluetoothInstructionIn.int1 == lastSentPingData) {
                 // this doesn't account for us having multiple outstanding + get an old ping

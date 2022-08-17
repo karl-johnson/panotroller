@@ -46,7 +46,7 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
     /* BLUETOOTH RELATED OBJECTS */
 
     private BluetoothService mBluetoothService; //
-    private BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
+    //private BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
     private Handler mHandler = new BluetoothConfigHandler(); // Handler to deal with information coming back over BT connection
     private boolean mIsBound = false; // Tracks whether unbinding is necessary on act. exit
 
@@ -143,26 +143,28 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
         /* FUNDAMENTAL BLUETOOTH TASKS */
         // this is called only once we're bound to the service
         mBluetoothService.setHandler(mHandler);
-        // turn on bluetooth if the user has it turned off
+        mBluetoothService.checkConnectionStatus();
+        onBluetoothStatusChange();
+        // do nothing if we're connecting or connected
         if(mBluetoothService.getConnectionStatus() >= BluetoothService.STATUS_CONNECTING) {
-            onBluetoothStatusChange();
+            //onBluetoothStatusChange();
             return;
         }
-
-        if(!mBTAdapter.isEnabled()) {
+        // turn on bluetooth if the user has it turned off
+        if(mBluetoothService.getConnectionStatus() == BluetoothService.STATUS_OFF) {
             // if it is off, launch built-in activity to turn on bluetooth
-            // onResume is called upon returning from ACTION_REQUEST_ENABLE so this will keep
-            // appearing until bluetooth is enabled!
-            updateBluetoothStatus(BluetoothService.STATUS_OFF, null);
+            // onResume is called upon returning from ACTION_REQUEST_ENABLE, which reconnects the
+            // service, calling onServiceConnectedBluetoothTasks
+            // so this will keep appearing until bluetooth is enabled!
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             // this is non-blocking!
         }
-        if(mBTAdapter.isEnabled()) {// things to do once BT adapter is enabled
-            // set proper text
-            updateBluetoothStatus(BluetoothService.STATUS_DISCONNECTED, null);
+        if(mBluetoothService.mBTAdapter.isEnabled()) {// things to do once BT adapter is enabled
+            // set proper text - NO NEED - done in onBluetoothStatusChange();
+            //updateBluetoothStatus(BluetoothService.STATUS_DISCONNECTED, null);
             // assign list of paired devices
-            mPairedDevices = mBTAdapter.getBondedDevices();
+            mPairedDevices = mBluetoothService.mBTAdapter.getBondedDevices();
             // iterate through these to get simple List of device names
             for(BluetoothDevice device : mPairedDevices) mPairedDeviceNames.add(device.getName());
             if(mPairedDevices.size() == 0) {
@@ -200,8 +202,9 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
                         "Couldn't find clicked device!", Toast.LENGTH_SHORT).show();
             }
             // Update GUI to say we're connecting
-            updateBluetoothStatus(BluetoothService.STATUS_CONNECTING, clickedDevice);
-
+            mBluetoothService.connectedDevice = clickedDevice;
+            mBluetoothService.setStatusConnecting();
+            onBluetoothStatusChange();
             // Spawn a thread to handle the blocking bluetooth connection process
             new Thread() {
                 public void run() {
@@ -224,7 +227,6 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
                             // this exception means the socket creation failed
                             fail = true;
                             mBluetoothService.getBluetoothSocket().close();
-                            // send message out of this thread using same handler as the service
                             mHandler.obtainMessage(
                                     BluetoothService.CONN_STATUS_UPDATED,
                                     BluetoothService.STATUS_DISCONNECTED, 0).sendToTarget();
@@ -267,8 +269,7 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
         Log.d("BT_CONNECTION", "Called disconnect()");
         mBluetoothService.getBluetoothThread().disconnect();
         // TODO check that we really disconnected
-
-        updateBluetoothStatus(BluetoothService.STATUS_DISCONNECTED, null);
+        mBluetoothService.checkConnectionStatus();
     }
 
     /* HANDLER - DETERMINES WHAT WE DO WITH AN INCOMING MESSAGE FROM BLUETOOTH SERVICE */
@@ -278,18 +279,25 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
             switch(msg.what) {
                 case BluetoothService.CONN_STATUS_UPDATED:
                     // TODO check if object is right type
-                    updateBluetoothStatus(msg.arg1, (BluetoothDevice) msg.obj);
+                    // I have no idea what the fuck this is
+                    if(msg.obj != null)
+                        try {
+                            mBluetoothService.connectedDevice = (BluetoothDevice) msg.obj;
+                        } catch (ClassCastException e) {
+                            Log.w("BT_CONFIG", "Tried to cast int to BT device");
+                        }
+                    onBluetoothStatusChange();
                     break;
                 case BluetoothService.NEW_INSTRUCTION_IN:
-                    BluetoothInstruction returnInstruction = (BluetoothInstruction) msg.obj;
+                    /*BluetoothInstruction returnInstruction = (BluetoothInstruction) msg.obj;
                     if(mBluetoothService.getConnectionStatus() == BluetoothService.STATUS_CONNECTING) {
                         if(mBluetoothService.getBluetoothThread().isConnectionHealthy) {
                             updateBluetoothStatus(BluetoothService.STATUS_CONNECTED, null);
                         }
-                    }
+                    }*/
                     break;
                 case BluetoothService.NEW_INSTRUCTION_CORRUPTED:
-                    Log.d("INST_CORRUPTED", "Received a corrupted instruction!");
+                    Log.d("BT_CONFIG", "Received a corrupted instruction!");
                     // TODO
                     break;
             }
@@ -309,6 +317,7 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     private void onBluetoothStatusChange() {
         // When we change the bluetooth status (in service), make these changes to UI
+        String deviceName = "[EMPTY]";
         switch(mBluetoothService.getConnectionStatus()) {
             case BluetoothService.STATUS_OFF:
                 mBluetoothStatusText.setText("Bluetooth Disabled");
@@ -335,16 +344,22 @@ public class ActivityBluetoothConfig extends AppCompatActivity {
                 mDevicesListView.setVisibility(View.VISIBLE);
                 break;
             case BluetoothService.STATUS_CONNECTING:
+                if(mBluetoothService.connectedDevice != null) {
+                    deviceName = mBluetoothService.connectedDevice.getName();
+                }
                 mBluetoothStatusText.setText(
-                        "Connecting to " + mBluetoothService.connectedDevice.getName());
+                        "Connecting to " + deviceName);
                 mBluetoothStatusText.setTextColor(
                         getApplicationContext().getColor(R.color.orange_connecting));
                 // don't worry about other UI for now
                 break;
             case BluetoothService.STATUS_CONNECTED:
                 // Make text say "connected"
+                if(mBluetoothService.connectedDevice != null) {
+                    deviceName = mBluetoothService.connectedDevice.getName();
+                }
                 mBluetoothStatusText.setText(
-                        "Connected to " + mBluetoothService.connectedDevice.getName());
+                        "Connected to " + deviceName);
                 mBluetoothStatusText.setTextColor(
                         getApplicationContext().getColor(R.color.green_accent));
                 // Enable "disconnect" button

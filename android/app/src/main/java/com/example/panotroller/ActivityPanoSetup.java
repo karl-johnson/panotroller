@@ -30,7 +30,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     /* CONSTANTS */
     private final static int MAX_JOY_MOTOR_SPEED = 400;
-    private final static int JOY_UPDATE_FREQUENCY = 100; // update period of joystick in ms
+    private final static int JOY_UPDATE_FREQUENCY = 50; // update period of joystick in ms
     private final static int DIALOG_MARGIN = 40;
 
     private final static int SETTINGS_ACTIVITY_REQUEST_CODE = 1;
@@ -199,8 +199,10 @@ public class ActivityPanoSetup extends AppCompatActivity {
                 // follow Point() and Rect() sign convention everywhere possible
                 // want joystick down -> +Y
                 // joystick right -> +X
-                sendMotorVels((short) (MAX_JOY_MOTOR_SPEED * -0.01 * strength * Math.cos(Math.toRadians(angle))),
-                        (short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.sin(Math.toRadians(angle))));
+                //Log.d("JOYSTICK", "(" + strength * Math.cos(Math.toRadians(angle)) +
+                //        "," + -strength * Math.sin(Math.toRadians(angle)) + ")");
+                sendMotorVels((short) (MAX_JOY_MOTOR_SPEED * 0.01 * strength * Math.cos(Math.toRadians(angle))),
+                        (short) (MAX_JOY_MOTOR_SPEED * -0.01 * strength * Math.sin(Math.toRadians(angle))));
             }
         }, JOY_UPDATE_FREQUENCY);
     }
