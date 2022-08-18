@@ -29,6 +29,8 @@ public class AcquisitionService extends Service {
     public final static int BLUETOOTH_STATUS_UPDATE = 2; // includes latency
     // will need to include position updates here in the future, if we want the viewport to work
 
+    // max time that we'll wait for a response after sending an instruction
+    public final static int MAX_WAIT_FOR_RESPONSE_TIME = 5000;
 
     /* MEMBERS */
     // for bluetooth service
@@ -46,6 +48,8 @@ public class AcquisitionService extends Service {
     private boolean isRunning = false; // tracks pause/resumed
     public boolean isRunning() {return isRunning;}
     private boolean isWaitingForResponse = false;
+    private long lastSentInstructionTime = 0;
+
     private boolean isFinished = false;
     public boolean isFinished() {return isFinished;}
 
@@ -117,6 +121,7 @@ public class AcquisitionService extends Service {
                 lastSentInstruction = instructionListIterator.next();
                 //Log.d("ACQUISITION", "Progressing to next instruction: " + ConnectedThread.bytesToHex(new byte[]{lastSentInstruction.inst}));
                 mBluetoothService.sendInstructionViaThread(lastSentInstruction);
+                lastSentInstructionTime = System.currentTimeMillis();
                 isWaitingForResponse = true;
             }
             else {
@@ -152,6 +157,16 @@ public class AcquisitionService extends Service {
         // next index works because list indices start at 0
         // also when this is exactly 1.0f the acquisition is done
         return (float) instructionListIterator.nextIndex() / instructionList.size();
+    }
+
+    private void retryLastInstruction() {
+        // it's important we be careful retrying instructions
+        // in timelapses, really want to avoid accidentally taking pictures twice for example
+        // for now, literally just re-send instruction
+        Toast.makeText(this, "No inst. response, retrying", Toast.LENGTH_SHORT).show();
+        mBluetoothService.sendInstructionViaThread(lastSentInstruction);
+        lastSentInstructionTime = System.currentTimeMillis();
+        isWaitingForResponse = true;
     }
 
     public BluetoothService.BluetoothBarInfo getBluetoothBarInfo() {
@@ -217,6 +232,18 @@ public class AcquisitionService extends Service {
                                 photoProgress++;
                             isWaitingForResponse = false;
                             updateAcquisition();
+                        }
+                        else {
+                            if(isWaitingForResponse) {
+                                if(System.currentTimeMillis() - lastSentInstructionTime > MAX_WAIT_FOR_RESPONSE_TIME) {
+                                    // if we're getting instructions for a while but not a response to the
+                                    // one that we sent, we need to do something, as a message was probably
+                                    // dropped.
+                                    // TODO make this timer updated by something other than pings
+                                    retryLastInstruction();
+                                }
+                            }
+
                         }
                     }
                     break;

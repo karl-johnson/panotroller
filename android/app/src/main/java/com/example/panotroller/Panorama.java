@@ -41,10 +41,10 @@ public class Panorama implements Parcelable {
     public final static Map<String, PanoramaCamera> builtInCameras;
     static {
         builtInCameras = new HashMap<String, PanoramaCamera>() {{
-            put("CANON_5D_MARK_II", new PanoramaCamera("Canon 5D Mark II", 36.0f, 24.0f, 5616, 3744, 1f));
-            put("CANON_6D", new PanoramaCamera("Canon 6D", 36.0f, 24.0f, 5472, 3648, 1f));
-            put("CANON_7D_MARK_II", new PanoramaCamera("Canon 7D Mark II", 22.4f, 15f, 5486, 3682, 1f));
-            put("CANON_40D", new PanoramaCamera("Canon 40D", 22.2f, 14.8f, 3888, 2592, 1f));
+            put("CANON_5D_MARK_II", new PanoramaCamera("Canon 5D Mark II", 36.0f, 24.0f, 5616, 3744, 1f, 30));
+            put("CANON_6D", new PanoramaCamera("Canon 6D", 36.0f, 24.0f, 5472, 3648, 1f, 30));
+            put("CANON_7D_MARK_II", new PanoramaCamera("Canon 7D Mark II", 22.4f, 15f, 5486, 3682, 1f, 25));
+            put("CANON_40D", new PanoramaCamera("Canon 40D", 22.2f, 14.8f, 3888, 2592, 1f, 12));
         }};
     }
 
@@ -122,6 +122,27 @@ public class Panorama implements Parcelable {
 
     Panorama(RectF regionIn) {region = regionIn;}
 
+    public PanoramaDetails getPanoramaDetails() {
+        // calculate some useful information about the details of this panorama
+
+        Point tileNum = new Point(); // number of tiles in each direction
+        // NOT ELEGANT ALERT - Copied equation from generateTiles()!
+        PointF cameraFov = getCameraFovDeg();
+        tileNum.x = (int) Math.ceil(region.width()/(cameraFov.x * (1.0f-settings.overlap)));
+        tileNum.y = (int) Math.ceil(region.height()/(cameraFov.y * (1.0f-settings.overlap)));
+        PanoramaCamera thisCamera = settings.getCamera();
+        double rawFileSize = tileNum.x * tileNum.y * thisCamera.rawSize; // in MB
+        Point resolution = new Point(0,0);
+        resolution.x = (int) Math.floor(tileNum.x * (1.0f-settings.overlap) * thisCamera.xRes);
+        resolution.y = (int) Math.floor(tileNum.y * (1.0f-settings.overlap) * thisCamera.yRes);
+        // from looking at all my current panoramas, the size of the zipped jpeg DZI tiles in
+        // MB is generally at or under 100* number of gigapixels
+        // https://www.desmos.com/calculator/ew3ykycnz8
+        // i.e. 1 MB = 0.01 GP = 10 MP -> 1 B = 10 pixels! that's quite good compression!
+        double finalPanoSize = 0.1 * resolution.x*resolution.y * 1e-9; // in GB
+        return new PanoramaDetails(tileNum, rawFileSize, resolution, finalPanoSize);
+    }
+
     public void addPoint(PointF in) {
         // TODO WRAP INPUT?
         definingPoints.add(in);
@@ -174,7 +195,6 @@ public class Panorama implements Parcelable {
         Point tileNum = new Point(); // number of tiles in each direction
         // trig to compute AOV + reduce delta by desired overlap
         Log.d("PANORAMA", "Focal length " + settings.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
-        // TODO - some degree versus radians confusion! still fixing
         PointF cameraFov = getCameraFovDeg();
         tileDelta.x = cameraFov.x * (1.0f-settings.overlap);
         tileDelta.y = cameraFov.y * (1.0f-settings.overlap);
@@ -376,7 +396,7 @@ public class Panorama implements Parcelable {
     }
 
     public PointF getCameraFovDeg() {
-        PanoramaCamera camera = builtInCameras.get(settings.cameraName);
+        PanoramaCamera camera = settings.getCamera();
         return new PointF(2.0f * (float) (180/Math.PI) * (float) Math.atan2(camera.xSize/2,settings.focalLength),
                 2.0f * (float) (180/Math.PI) * (float) Math.atan2(camera.ySize/2,settings.focalLength));
     }
@@ -455,8 +475,8 @@ public class Panorama implements Parcelable {
     }
 
     public static class PanoramaCamera {
-        PanoramaCamera(String dN, float xS, float yS, int xR, int yR, float fR) {
-            displayName = dN; xSize = xS; ySize = yS; xRes = xR; yRes = yR; frameRate = fR;
+        PanoramaCamera(String dN, float xS, float yS, int xR, int yR, float fR, double rS) {
+            displayName = dN; xSize = xS; ySize = yS; xRes = xR; yRes = yR; frameRate = fR; rawSize = rS;
         }
         public final String displayName;
         // the sensor size is used along with the lens being used to space tiles properly
@@ -467,8 +487,18 @@ public class Panorama implements Parcelable {
         public final int yRes; // height of the sensor in px
         // frame rate for continuous acquisitions
         public final float frameRate;
+        public final double rawSize; // approx raw file size in MB
     }
 
-
+    public static class PanoramaDetails {
+        PanoramaDetails(Point numTiles, double rawFilesSize, Point resolution, double finalPanoSize) {
+            this.numTiles = numTiles; this.rawFilesSize = rawFilesSize;
+            this.resolution = resolution; this.finalPanoSize = finalPanoSize;
+        }
+        public final Point numTiles;
+        public final double rawFilesSize;
+        public final Point resolution;
+        public final double finalPanoSize;
+    }
 
 }

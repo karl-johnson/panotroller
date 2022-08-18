@@ -51,6 +51,6 @@ public class GeneratedConstants {
 	public final static int MESSAGE_LENGTH = (int) 6;
 
 	// Other value: default_microstep
-	public final static int DEFAULT_MICROSTEP = (int) 8;
+	public final static int DEFAULT_MICROSTEP = (int) 4;
 
 }

@@ -19,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import androidx.appcompat.widget.Toolbar;
 
@@ -60,6 +61,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
     private ImageButton mAddButton;
     private ImageButton mRemoveButton;
     private ImageButton mSettingsButton;
+    private TextView mPhotosText;
+    private TextView mResolutionText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +76,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
         mAddButton = (ImageButton) findViewById(R.id.add_point);
         mRemoveButton = (ImageButton) findViewById(R.id.remove_point);
         mSettingsButton = (ImageButton) findViewById(R.id.pano_settings);
+        mPhotosText = (TextView) findViewById(R.id.photos_text);
+        mResolutionText = (TextView) findViewById(R.id.resolution_text);
         mViewport = (ViewportView) findViewById(R.id.pano_setup_viewer);
         mViewport.updatePanorama(mPanorama);
         // set up button actions
@@ -187,6 +192,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
             else if(resultCode == RESULT_CANCELED) {
                 Log.d("PANO_SETUP", "Settings cancelled!");
             }
+            onPanoramaUpdate();
         }
     }
 
@@ -284,6 +290,17 @@ public class ActivityPanoSetup extends AppCompatActivity {
         return true;
     }
 
+    private void onPanoramaUpdate() {
+        mViewport.updatePanorama(mPanorama);
+        Panorama.PanoramaDetails newDetails = mPanorama.getPanoramaDetails();
+        int numPhotos = newDetails.numTiles.x * newDetails.numTiles.y;
+        mPhotosText.setText(getString(R.string.pano_setup_photos,
+                numPhotos, newDetails.numTiles.x, newDetails.numTiles.y, newDetails.rawFilesSize/1000));
+        double gigapixels = (double) newDetails.resolution.x * (double) newDetails.resolution.y * 1e-9;
+        mResolutionText.setText(getString(R.string.pano_setup_resolution,
+                gigapixels, newDetails.resolution.x, newDetails.resolution.y, newDetails.finalPanoSize));
+    }
+
     /* HANDLER - DETERMINES WHAT WE DO WITH AN INCOMING MESSAGE FROM BLUETOOTH SERVICE */
     class PanoSetupHandler extends Handler {
         @Override
@@ -300,7 +317,8 @@ public class ActivityPanoSetup extends AppCompatActivity {
                         mHasOutstandingAdd = false;
                         // haptic feedback on success
                         mAddButton.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
-                        mViewport.updatePanorama(mPanorama);
+                        onPanoramaUpdate();
+
                     }
                     else if(mHasOutstandingRemove) {
                         Log.d("PANORAMA", "Removing point " + newPositionDeg.toString());
@@ -308,7 +326,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
                         mPanorama.removeNearestPoint(newPositionDeg);
                         mHasOutstandingRemove = false;
                         mRemoveButton.performHapticFeedback(HapticFeedbackConstants.CONFIRM);
-                        mViewport.updatePanorama(mPanorama);
+                        onPanoramaUpdate();
                     }
                     mViewport.updateCameraPos(newPositionDeg);
                 }

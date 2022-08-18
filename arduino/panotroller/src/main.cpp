@@ -24,7 +24,6 @@
 // if connection drops after a non-zero motor speed is set, motor could runaway
 // so if we don't get a set speed command for this amount of time, stop motors
 #define MOTOR_TIMEOUT 1000 // (ms)
-#define MOTOR_DEFAULT_MICROSTEP 8
 // invert what direction AccelStepper assigns to positive/negative
 // this makes the output follow sign convention
 #define DO_INVERT_X_OUTPUT false
@@ -83,7 +82,7 @@ void setup() {
 
   pinMode(MS1, OUTPUT);
   pinMode(MS2, OUTPUT);
-  setMicrostep(MOTOR_DEFAULT_MICROSTEP);
+  setMicrostep(DEFAULT_MICROSTEP);
 }
 
 void loop() {
