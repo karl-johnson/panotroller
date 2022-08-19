@@ -3,6 +3,7 @@ package com.example.panotroller;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -38,13 +39,13 @@ public class Panorama implements Parcelable {
     public final static int CORNER_BOT_RIGHT = 3;
 
     // data from digicamdb.com; TODO experiments to determine frame rate
-    public final static Map<String, PanoramaCamera> builtInCameras;
+    public final static Map<String, PanoCamera> builtInCameras;
     static {
-        builtInCameras = new HashMap<String, PanoramaCamera>() {{
-            put("CANON_5D_MARK_II", new PanoramaCamera("Canon 5D Mark II", 36.0f, 24.0f, 5616, 3744, 1f, 30));
-            put("CANON_6D", new PanoramaCamera("Canon 6D", 36.0f, 24.0f, 5472, 3648, 1f, 30));
-            put("CANON_7D_MARK_II", new PanoramaCamera("Canon 7D Mark II", 22.4f, 15f, 5486, 3682, 1f, 25));
-            put("CANON_40D", new PanoramaCamera("Canon 40D", 22.2f, 14.8f, 3888, 2592, 1f, 12));
+        builtInCameras = new HashMap<String, PanoCamera>() {{
+            put("CANON_5D_MARK_II", new PanoCamera("Canon 5D Mark II", 36.0f, 24.0f, 5616, 3744, 1f, 30));
+            put("CANON_6D", new PanoCamera("Canon 6D", 36.0f, 24.0f, 5472, 3648, 1f, 30));
+            put("CANON_7D_MARK_II", new PanoCamera("Canon 7D Mark II", 22.4f, 15f, 5486, 3682, 1f, 25));
+            put("CANON_40D", new PanoCamera("Canon 40D", 22.2f, 14.8f, 3888, 2592, 1f, 12));
         }};
     }
 
@@ -87,7 +88,7 @@ public class Panorama implements Parcelable {
     protected Panorama(Parcel in) {
         definingPoints = in.createTypedArrayList(PointF.CREATOR);
         region = in.readParcelable(RectF.class.getClassLoader());
-        settings = in.readParcelable(PanoramaSettings.class.getClassLoader());
+        settings = new PanoramaSettings(in.readBundle(PanoramaSettings.class.getClassLoader()));
         is360pano = in.readByte() != 0;
     }
 
@@ -112,7 +113,7 @@ public class Panorama implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeTypedList(definingPoints);
         dest.writeParcelable(region, flags);
-        dest.writeParcelable(settings, flags);
+        dest.writeBundle(settings.writeToBundle());
         dest.writeByte((byte) (is360pano ? 1 : 0));
     }
 
@@ -127,10 +128,10 @@ public class Panorama implements Parcelable {
 
         Point tileNum = new Point(); // number of tiles in each direction
         // NOT ELEGANT ALERT - Copied equation from generateTiles()!
-        PointF cameraFov = getCameraFovDeg();
+        PointF cameraFov = settings.camera.getCameraFovDeg();
         tileNum.x = (int) Math.ceil(region.width()/(cameraFov.x * (1.0f-settings.overlap)));
         tileNum.y = (int) Math.ceil(region.height()/(cameraFov.y * (1.0f-settings.overlap)));
-        PanoramaCamera thisCamera = settings.getCamera();
+        PanoCamera thisCamera = settings.camera;
         double rawFileSize = tileNum.x * tileNum.y * thisCamera.rawSize; // in MB
         Point resolution = new Point(0,0);
         resolution.x = (int) Math.floor(tileNum.x * (1.0f-settings.overlap) * thisCamera.xRes);
@@ -182,7 +183,7 @@ public class Panorama implements Parcelable {
         Log.d("PANORAMA", "Generate tiles called with region size + (" + region.width() + "x" + region.height() + ")");
         // TODO input sanitation
         // get camera from settings object - we will need it a lot
-        PanoramaCamera camera = settings.getCamera();
+        PanoCamera camera = settings.camera;
 
         // generates a list of tiles which span panorama region according to setting members
         List<PointF> out = new ArrayList<PointF>();
@@ -194,8 +195,8 @@ public class Panorama implements Parcelable {
         PointF tileDelta = new PointF();
         Point tileNum = new Point(); // number of tiles in each direction
         // trig to compute AOV + reduce delta by desired overlap
-        Log.d("PANORAMA", "Focal length " + settings.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
-        PointF cameraFov = getCameraFovDeg();
+        Log.d("PANORAMA", "Focal length " + settings.camera.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
+        PointF cameraFov = settings.camera.getCameraFovDeg();
         tileDelta.x = cameraFov.x * (1.0f-settings.overlap);
         tileDelta.y = cameraFov.y * (1.0f-settings.overlap);
         tileNum.x = (int) Math.ceil(region.width()/tileDelta.x);
@@ -395,25 +396,14 @@ public class Panorama implements Parcelable {
         return new PointF(originIn.x + xIndexIn*deltaIn.x,originIn.y + yIndexIn*deltaIn.y);
     }
 
-    public PointF getCameraFovDeg() {
-        PanoramaCamera camera = settings.getCamera();
-        return new PointF(2.0f * (float) (180/Math.PI) * (float) Math.atan2(camera.xSize/2,settings.focalLength),
-                2.0f * (float) (180/Math.PI) * (float) Math.atan2(camera.ySize/2,settings.focalLength));
-    }
-
-    public static class PanoramaSettings implements Parcelable {
+    public static class PanoramaSettings {
         // class to encapsulate panorama settings that can be edited by PanoramaSettingsMenu
         // does not include panorama region and defining points etc.
         public int order = ORDER_ZIGZAG;
         public int direction = DIRECTION_COLUMN;
         public int corner = CORNER_TOP_LEFT;
         // to avoid parceling cameras (which are static anyways) simply store name
-        public String cameraName = "CANON_5D_MARK_II";
-        // then just fetch the camera by its name in the built in map when we need it
-        public PanoramaCamera getCamera() {
-            return builtInCameras.get(cameraName);
-        }
-        public float focalLength = 100;
+        public PanoCamera camera = builtInCameras.get("CANON_5D_MARK_II"); // default camera
         public float overlap = 0.2f; // desired overlap between tiles in panorama (change to %?)
         // settings which impact timing
         public short settleTime = 0; // desired settle time after end of move before exposure starts
@@ -423,71 +413,35 @@ public class Panorama implements Parcelable {
 
         // method to print settings as string for debugging
         public String toString() {
-            return "f: " + String.valueOf(focalLength) +
-                    ", o: " + String.valueOf(overlap) +
-                    ", s: " + String.valueOf(settleTime) +
-                    ", e: " + String.valueOf(exposureTime);
+            return "cam: " + camera.toString() +
+                    "o: " + overlap +
+                    ", s: " + settleTime +
+                    ", e: " + exposureTime;
         }
 
         /* PARCELABLE METHODS */
 
-
-
-        protected PanoramaSettings(Parcel in) {
-            order = in.readInt();
-            direction = in.readInt();
-            corner = in.readInt();
-            cameraName = in.readString();
-            focalLength = in.readFloat();
-            overlap = in.readFloat();
-            settleTime = (short) in.readInt();
-            exposureTime = (short) in.readInt();
+        PanoramaSettings(Bundle bundleIn) {
+            order = bundleIn.getInt("order");
+            direction = bundleIn.getInt("direction");
+            corner = bundleIn.getInt("corner");
+            camera = new PanoCamera(bundleIn.getBundle("camera"));
+            overlap = bundleIn.getFloat("overlap");
+            settleTime = bundleIn.getShort("settleTime");
+            exposureTime = bundleIn.getShort("exposureTime");
         }
 
-        public static final Creator<PanoramaSettings> CREATOR = new Creator<PanoramaSettings>() {
-            @Override
-            public PanoramaSettings createFromParcel(Parcel in) {
-                return new PanoramaSettings(in);
-            }
-
-            @Override
-            public PanoramaSettings[] newArray(int size) {
-                return new PanoramaSettings[size];
-            }
-        };
-
-        @Override
-        public int describeContents() {
-            return 0;
+        public Bundle writeToBundle() {
+            Bundle bundleOut = new Bundle();
+            bundleOut.putInt("order", order);
+            bundleOut.putInt("direction", direction);
+            bundleOut.putInt("corner",corner);
+            bundleOut.putBundle("camera",camera.writeToBundle());
+            bundleOut.putFloat("overlap",overlap);
+            bundleOut.putShort("settleTime",settleTime);
+            bundleOut.putShort("exposureTime",exposureTime);
+            return bundleOut;
         }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeInt(order);
-            dest.writeInt(direction);
-            dest.writeInt(corner);
-            dest.writeString(cameraName);
-            dest.writeFloat(focalLength);
-            dest.writeFloat(overlap);
-            dest.writeInt((int) settleTime);
-            dest.writeInt((int) exposureTime);
-        }
-    }
-
-    public static class PanoramaCamera {
-        PanoramaCamera(String dN, float xS, float yS, int xR, int yR, float fR, double rS) {
-            displayName = dN; xSize = xS; ySize = yS; xRes = xR; yRes = yR; frameRate = fR; rawSize = rS;
-        }
-        public final String displayName;
-        // the sensor size is used along with the lens being used to space tiles properly
-        public final float xSize; // width of the sensor in mm
-        public final float ySize; // height of the sensor in
-        // the resolution of the sensor is used in the estimate of the final pano resolution
-        public final int xRes; // width of the sensor in px
-        public final int yRes; // height of the sensor in px
-        // frame rate for continuous acquisitions
-        public final float frameRate;
-        public final double rawSize; // approx raw file size in MB
     }
 
     public static class PanoramaDetails {

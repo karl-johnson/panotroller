@@ -19,7 +19,7 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
     private SliderSettingsModule settleSlider;
     private SliderSettingsModule exposureSlider;
     private Spinner cameraSpinner;
-
+    private Panorama.PanoramaSettings priorSettings;
 
 
     @Override
@@ -34,12 +34,12 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
         exposureSlider = findViewById(R.id.exposureSlider);
         // set UI members based on existing settings
         Intent intentIn = getIntent();
-        Panorama.PanoramaSettings currentSettings = intentIn.getParcelableExtra("CURRENT_SETTINGS");
-        if(currentSettings != null) {
-            focalSlider.setValueTo(currentSettings.focalLength);
-            overlapSlider.setValueTo(currentSettings.overlap * 100);
-            settleSlider.setValueTo((float) currentSettings.settleTime / 1000f);
-            exposureSlider.setValueTo((float) currentSettings.exposureTime / 1000f);
+        priorSettings = new Panorama.PanoramaSettings(intentIn.getBundleExtra("CURRENT_SETTINGS"));
+        if(priorSettings != null) {
+            focalSlider.setValueTo(priorSettings.camera.focalLength);
+            overlapSlider.setValueTo(priorSettings.overlap * 100);
+            settleSlider.setValueTo((float) priorSettings.settleTime / 1000f);
+            exposureSlider.setValueTo((float) priorSettings.exposureTime / 1000f);
         }
         // setup action bar
         setTitle("Panorama Settings");
@@ -58,14 +58,16 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
         // safest place to set result IMO
         // first built panorama settings object from UI state
         Panorama.PanoramaSettings settings = new Panorama.PanoramaSettings();
-        settings.focalLength = focalSlider.getValue();
+        // TODO allow camera selection
+        settings.camera = priorSettings.camera;
+        settings.camera.focalLength = focalSlider.getValue();
         settings.overlap = overlapSlider.getValue()/100; // convert from % to decimal
         // both times are in float seconds for user but short ms internally
         settings.settleTime = (short) (1000 * settleSlider.getValue());
         settings.exposureTime = (short) (1000 * exposureSlider.getValue());
         // TODO put camera + configuration things in here too once implemented
         Intent returnIntent = new Intent();
-        returnIntent.putExtra("NEW_SETTINGS", settings);
+        returnIntent.putExtra("NEW_SETTINGS", settings.writeToBundle());
         setResult(RESULT_OK, returnIntent);
         finish();
     }

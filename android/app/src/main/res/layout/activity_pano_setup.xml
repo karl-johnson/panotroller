@@ -122,7 +122,7 @@
         app:layout_constraintEnd_toEndOf="@+id/pano_setup_viewer"
         app:layout_constraintStart_toStartOf="@+id/pano_setup_viewer" />
 
-    <com.example.panotroller.ViewportView
+    <com.example.panotroller.PanoSetupViewportView
         android:id="@+id/pano_setup_viewer"
         android:layout_width="0dp"
         android:layout_height="0dp"

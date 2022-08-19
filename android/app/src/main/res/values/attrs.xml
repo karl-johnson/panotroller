@@ -9,7 +9,6 @@
     </declare-styleable>
 
     <declare-styleable name="ViewportView">
-        <attr name="panoRegionColor" format="color"/>
         <attr name="camRegionColor" format="color"/>
     </declare-styleable>
 </resources>

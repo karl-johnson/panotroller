@@ -38,7 +38,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
 
     // DEBUG: HARDCODED PANORAMA AND CAMERAS
-    private Panorama.PanoramaCamera testCamera = Panorama.builtInCameras.get("CANON_5D_MARK_II");
+    // private PanoCamera testCamera = Panorama.builtInCameras.get("CANON_5D_MARK_II");
     private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
 
     /* MEMBERS */
@@ -56,7 +56,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
-    private ViewportView mViewport;
+    private PanoSetupViewportView mViewport;
     private JoystickView mJoystick;
     private ImageButton mAddButton;
     private ImageButton mRemoveButton;
@@ -78,7 +78,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         mSettingsButton = (ImageButton) findViewById(R.id.pano_settings);
         mPhotosText = (TextView) findViewById(R.id.photos_text);
         mResolutionText = (TextView) findViewById(R.id.resolution_text);
-        mViewport = (ViewportView) findViewById(R.id.pano_setup_viewer);
+        mViewport = (PanoSetupViewportView) findViewById(R.id.pano_setup_viewer);
         mViewport.updatePanorama(mPanorama);
         // set up button actions
         mAddButton.setOnClickListener(this::onAddButton);
@@ -171,7 +171,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
 
         // TODO change to startActivityForResult https://stackoverflow.com/questions/35264383/how-to-retrieve-values-from-popup-to-main
         Intent intent = new Intent(this, ActivityPanoramaSettings.class);
-        intent.putExtra("CURRENT_SETTINGS", mPanorama.settings);
+        intent.putExtra("CURRENT_SETTINGS", mPanorama.settings.writeToBundle());
         startActivityForResult(intent, SETTINGS_ACTIVITY_REQUEST_CODE);
     }
 
@@ -180,7 +180,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == SETTINGS_ACTIVITY_REQUEST_CODE) {
             if(resultCode == RESULT_OK) {
-                Panorama.PanoramaSettings newSettings = data.getParcelableExtra("NEW_SETTINGS");
+                Panorama.PanoramaSettings newSettings = new Panorama.PanoramaSettings(data.getBundleExtra("NEW_SETTINGS"));
                 if(newSettings != null) {
                     Log.d("PANO_SETUP", "Got new settings: " + newSettings.toString());
                     mPanorama.settings = newSettings;
