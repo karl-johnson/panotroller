@@ -81,14 +81,14 @@ public class ConnectedThread extends Thread {
                                 checkIfPing(newInstruction);
                                 checkIfCellUpdate(newInstruction);
                                 mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
-                                Log.d("CONNECTED_THREAD","Received new instruction, sent to handler");
+                                //Log.d("CONNECTED_THREAD","Received new instruction, sent to handler");
                             } catch (BluetoothInstruction.CorruptedInstructionException e) {
                                 mHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_CORRUPTED).sendToTarget();
                             } catch (IOException e2) {
                                 Log.e("BAD_ENC_MESSAGE_LENGTH",e2.getMessage());
                             }
                             byteIndex = 0; // overwrite old message
-                            messageInProgress = false; // mefssage is over
+                            messageInProgress = false; // message is over
                         }
                     }
                     else if(inByte == GeneratedConstants.START_BYTE) {

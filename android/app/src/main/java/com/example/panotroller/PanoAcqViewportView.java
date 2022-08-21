@@ -11,23 +11,23 @@ import androidx.annotation.Nullable;
 
 import java.util.List;
 
-public class PanoSetupViewportView extends ViewportView {
+public class PanoAcqViewportView extends ViewportView {
 
     private Panorama currentPanorama;
     private boolean doDrawPanorama = false;
-    private final Paint mPanoRegionPaint, mPointsPaint, mFullRegionPaint;
+    private Paint mPanoRegionPaint;
+    private Paint mPointsPaint;
 
-    public PanoSetupViewportView(Context context, @Nullable AttributeSet attrs) {
+    public PanoAcqViewportView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         // TODO use styledAtrributes instead of hardcoding
         // get colors
-        int panoRegionColor, definingPointsColor;
+        int panoRegionColor, finishedPointsColor;
         int DEFAULT_PANO_COLOR = context.getColor(R.color.green_accent);
-        int DEFAULT_POINTS_COLOR = context.getColor(R.color.white);
-        int DEFAULT_FULL_COLOR = context.getColor(R.color.green_accent_var);
+        int DEFAULT_POINTS_COLOR = context.getColor(R.color.green_accent);
 
         panoRegionColor = DEFAULT_PANO_COLOR;
-        definingPointsColor = DEFAULT_POINTS_COLOR;
+        finishedPointsColor = DEFAULT_POINTS_COLOR;
 
         // create Paint objects from colors
         mPanoRegionPaint = new Paint();
@@ -35,31 +35,20 @@ public class PanoSetupViewportView extends ViewportView {
         mPanoRegionPaint.setColor(panoRegionColor);
         mPanoRegionPaint.setStyle(Paint.Style.STROKE);
 
-        mFullRegionPaint = new Paint();
-        mFullRegionPaint.setAntiAlias(true);
-        mFullRegionPaint.setColor(panoRegionColor);
-        mFullRegionPaint.setStyle(Paint.Style.STROKE);
-
         mPointsPaint = new Paint();
         mPointsPaint.setAntiAlias(true);
-        mPointsPaint.setColor(definingPointsColor);
-        mPointsPaint.setStyle(Paint.Style.STROKE);
+        mPointsPaint.setColor(finishedPointsColor);
+        mPointsPaint.setStyle(Paint.Style.FILL);
     }
 
     @Override
     protected  void onDraw(Canvas canvas) {
         if(doDrawPanorama) {
             if (currentPanorama != null) {
-                RectF panoRegionDeg = currentPanorama.getRegion();
+                RectF panoRegionDeg = currentPanorama.getFullRegion();
                 if(panoRegionDeg != null)
-                    // TODO 360 handling
                     canvas.drawRect(super.scaleRectToAxes(panoRegionDeg), mPanoRegionPaint);
-                    canvas.drawRect(super.scaleRectToAxes(currentPanorama.getFullRegion()),
-                            mFullRegionPaint);
-                List<PointF> currentPoints = currentPanorama.getDefiningPoints();
-                for(PointF thisPoint : currentPoints) {
-                    canvas.drawRect(scaleRectToAxes(getCameraRegionFromCenter(thisPoint)), mPointsPaint);
-                }
+
             }
         }
         // draw camera and axis limits last

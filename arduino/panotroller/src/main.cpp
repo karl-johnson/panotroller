@@ -26,7 +26,7 @@
 #define MOTOR_TIMEOUT 1000 // (ms)
 // invert what direction AccelStepper assigns to positive/negative
 // this makes the output follow sign convention
-#define DO_INVERT_X_OUTPUT false
+#define DO_INVERT_X_OUTPUT true
 #define DO_INVERT_Y_OUTPUT true
 
 

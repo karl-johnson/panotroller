@@ -6,6 +6,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -27,10 +29,13 @@ public class AcquisitionService extends Service {
     // constants for acquisition activity we're going to be sending messages to
     public final static int ACQUISITION_STATUS_UPDATE = 1;
     public final static int BLUETOOTH_STATUS_UPDATE = 2; // includes latency
+    public final static int CAMERA_POS_UPDATE = 3;
     // will need to include position updates here in the future, if we want the viewport to work
 
     // max time that we'll wait for a response after sending an instruction
     public final static int MAX_WAIT_FOR_RESPONSE_TIME = 5000;
+
+    public final static int CAM_UPDATE_PERIOD = 100; // ms
 
     /* MEMBERS */
     // for bluetooth service
@@ -42,6 +47,11 @@ public class AcquisitionService extends Service {
     BluetoothInstruction lastSentInstruction = null;
     Handler mInternalHandler = new AcquisitionServiceHandler();
     Handler mExternalHandler;
+
+    private Panorama mPanorama;
+    public void setPanorama(Panorama panoramaIn) {mPanorama = panoramaIn;}
+    public Panorama getPanorama() { return mPanorama;}
+    private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
 
     private boolean isEnabled = false; // have we been given an instruction list?
     public boolean isEnabled() {return isEnabled;}
@@ -87,6 +97,27 @@ public class AcquisitionService extends Service {
         }
         Log.d("ACQUISITION", "Enabling acquisition w/ instruction list of length " + listIn.size() + " containing " + totalPhotos + " photos");
         isEnabled = true;
+
+        final Handler periodicUpdatesHandler = new Handler();
+        Runnable periodicUpdatesRunnable = new Runnable() {
+
+            @Override
+            public void run() {
+                try{
+                    mBluetoothService.sendInstructionViaThread(
+                            new BluetoothInstruction(GeneratedConstants.INST_GET_POS,(short) 0, (short) 0));
+                }
+                catch (Exception e) {
+                    // TODO: handle exception
+                }
+                finally{
+                    //also call the same runnable to call it at regular interval
+                    periodicUpdatesHandler.postDelayed(this, CAM_UPDATE_PERIOD);
+                }
+            }
+        };
+        // start the postDelayed chain
+        periodicUpdatesHandler.post(periodicUpdatesRunnable);
     }
 
     public void setExternalHandler(Handler handlerIn) {mExternalHandler = handlerIn;}
@@ -114,7 +145,6 @@ public class AcquisitionService extends Service {
 
     private void updateAcquisition() {
         // only do things if we're un-paused and not still waiting on an instruction
-        // TODO implement re-trying instructions if we wait long enough for a response
         if(isRunning && !isWaitingForResponse) {
             // advance iterator and send next instruction
             if(instructionListIterator.hasNext()) {
@@ -163,6 +193,7 @@ public class AcquisitionService extends Service {
         // it's important we be careful retrying instructions
         // in timelapses, really want to avoid accidentally taking pictures twice for example
         // for now, literally just re-send instruction
+        Log.d("ACQ_SERVICE", "Retrying last instruction");
         Toast.makeText(this, "No inst. response, retrying", Toast.LENGTH_SHORT).show();
         mBluetoothService.sendInstructionViaThread(lastSentInstruction);
         lastSentInstructionTime = System.currentTimeMillis();
@@ -243,7 +274,11 @@ public class AcquisitionService extends Service {
                                     retryLastInstruction();
                                 }
                             }
-
+                        }
+                        // pass on frequent camera position updates
+                        if (newInstruction.inst == GeneratedConstants.INST_GOT_POS) {
+                            PointF newPositionDeg = mPositionConverter.convertStepsToDegrees(new Point(newInstruction.int1, newInstruction.int2));
+                            mExternalHandler.obtainMessage(CAMERA_POS_UPDATE, newPositionDeg).sendToTarget();
                         }
                     }
                     break;
@@ -261,6 +296,8 @@ public class AcquisitionService extends Service {
             }
         }
     }
+
+    /* THREAD TO PERIODICALLY PERFORM UPDATES/CHECKS */
 
 
 }

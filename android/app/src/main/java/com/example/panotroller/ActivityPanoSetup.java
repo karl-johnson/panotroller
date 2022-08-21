@@ -259,6 +259,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
         Log.d("ACQUISITION_SETUP", "Preparing activity");
         List<BluetoothInstruction> exportInstructionList = mPanorama.generateInstructionList(mPositionConverter);
         // NOTE: if you're having issues with null instruction list, look here
+        mAcquisitionService.setPanorama(mPanorama); // TODO maybe move instruction generation inside?
         mAcquisitionService.enableAcquisition(exportInstructionList);
         // launch next activity
         Log.d("ACQUISITION_SETUP", "Attempting to launch acquisition activity");

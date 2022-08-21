@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -30,6 +31,7 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
 
     /* UI OBJECTS */
     private FragmentBluetoothBar mBluetoothBar;
+    private PanoAcqViewportView mViewport;
     private TextView mPhotosText;
     private TextView mTimeText;
     private TextView mRemainingText;
@@ -51,6 +53,8 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
         mProgressBar = (View) findViewById(R.id.pano_acq_progressbar);
         mProgressBarText = (TextView) findViewById(R.id.pano_acq_progressbar_text);
         mPausePlayButton = (ImageButton) findViewById(R.id.pause_play);
+
+        mViewport = (PanoAcqViewportView) findViewById(R.id.pano_acq_viewer);
 
         // toolbar setup
         setTitle("Panorama Acquisition");
@@ -130,6 +134,8 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             mAcquisitionService.setExternalHandler(mAcquisitionHandler);
             // Update bluetooth bar using acquisition service bt bar passthrough method
             mBluetoothBar.update(mAcquisitionService.getBluetoothBarInfo());
+            // Update viewport
+            mViewport.updatePanorama(mAcquisitionService.getPanorama());
             // Also populate UI with stats about upcoming acquisition
             mPhotosText.setText(mAcquisitionService.getTotalPhotos() + " photos");
             updateRemainingPhotosText();
@@ -181,6 +187,10 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
                 case AcquisitionService.BLUETOOTH_STATUS_UPDATE:
                     mBluetoothBar.update((BluetoothService.BluetoothBarInfo) msg.obj);
                     break;
+                case AcquisitionService.CAMERA_POS_UPDATE:
+                    // check Object type
+                    if(msg.obj.getClass() == PointF.class)
+                        mViewport.updateCameraPos((PointF) msg.obj);
             }
         }
     }

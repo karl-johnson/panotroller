@@ -40,7 +40,7 @@ public class ViewportView extends View {
         mAxisRegionPaint = new Paint();
         mAxisRegionPaint.setAntiAlias(true);
         mAxisRegionPaint.setColor(0xff999999);
-        mAxisRegionPaint.setStyle(Paint.Style.FILL);
+        mAxisRegionPaint.setStyle(Paint.Style.STROKE);
 
         mCameraRegionPaint = new Paint();
         mCameraRegionPaint.setAntiAlias(true);
@@ -105,6 +105,8 @@ public class ViewportView extends View {
 
     public void updateCameraPos(PointF newPositionDeg) {
         cameraRegionCenter = newPositionDeg;
+        // wrap camera at +/- 180 deg limits in x
+        cameraRegionCenter.x = (float) ((cameraRegionCenter.x + 180.0) % 360.0 - 180.0);
         //Log.d("VIEWPORT", "New center: " + String.valueOf(newPositionDeg));
         updateCameraFov();
     }
@@ -126,8 +128,6 @@ public class ViewportView extends View {
     }
 
     protected RectF scaleRectToAxes(RectF rectIn) {
-        int measuredWidth = getMeasuredWidth();
-        int measuredHeight = getMeasuredHeight();
         // god there's gotta be a better way to do this
         return new RectF(
                 linmap(rectIn.left,axisLimits.left, axisLimits.right, axisRegion.left, axisRegion.right),

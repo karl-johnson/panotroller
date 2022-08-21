@@ -125,12 +125,7 @@ public class Panorama implements Parcelable {
 
     public PanoramaDetails getPanoramaDetails() {
         // calculate some useful information about the details of this panorama
-
-        Point tileNum = new Point(); // number of tiles in each direction
-        // NOT ELEGANT ALERT - Copied equation from generateTiles()!
-        PointF cameraFov = settings.camera.getCameraFovDeg();
-        tileNum.x = (int) Math.ceil(region.width()/(cameraFov.x * (1.0f-settings.overlap)));
-        tileNum.y = (int) Math.ceil(region.height()/(cameraFov.y * (1.0f-settings.overlap)));
+        Point tileNum = getTileNum();
         PanoCamera thisCamera = settings.camera;
         double rawFileSize = tileNum.x * tileNum.y * thisCamera.rawSize; // in MB
         Point resolution = new Point(0,0);
@@ -177,14 +172,72 @@ public class Panorama implements Parcelable {
             Log.d("PANORAMA", "Removed point, new region is null.");
     }
 
+    private PointF getBasicTileDelta() {
+        PointF cameraFov = settings.camera.getCameraFovDeg();
+        PointF tileDelta = new PointF(0,0);
+        tileDelta.x = cameraFov.x * (1.0f-settings.overlap);
+        tileDelta.y = cameraFov.y * (1.0f-settings.overlap);
+        return tileDelta;
+    }
+
+    private Point getTileNum() {
+        // for cases where we only want number, and don't care about access to delta
+        return getTileNumFromDelta(getBasicTileDelta());
+    }
+
+    private Point getTileNumFromDelta(PointF deltaIn) {
+        Point tileNum = new Point(0,0);
+        if(is360pano) tileNum.x = (int) Math.ceil(360.0/deltaIn.x);
+        else tileNum.x = (int) Math.ceil(region.width()/deltaIn.x) + 1;
+        tileNum.y = (int) Math.ceil(region.height()/deltaIn.y) + 1;
+        return tileNum;
+    }
+
+    public PointF getAdjustedTileDelta() {
+        PointF tileDelta = getBasicTileDelta();
+        Point tileNum = getTileNumFromDelta(tileDelta);
+        return getAdjustedTileDelta(tileDelta, tileNum);
+    }
+
+    private PointF getAdjustedTileDelta(PointF tileDelta, Point tileNum) {
+        // again, have to copy code because there are cases where we don't need anything but delta
+        if(is360pano) { // if we have a 360 pano we should adjust spacing slightly to optimize overlap
+            tileDelta.x = (float) 360.0/tileNum.x; // space out evenly with slightly more overlap
+        }
+        return tileDelta;
+    }
+
+    public RectF getFullRegion() {
+        if(region != null) {
+            // unlike rest of code, for visualizations we might want camera region including cam FOV
+            PointF tileDelta = getBasicTileDelta();
+            Point tileNum = getTileNumFromDelta(tileDelta);
+            tileDelta = getAdjustedTileDelta(tileDelta, tileNum);
+            PointF tileOriginShift = getTileOriginShift(tileDelta, tileNum);
+            PointF cameraFov = settings.camera.getCameraFovDeg();
+            PointF fullOrigin = new PointF(region.left - tileOriginShift.x - cameraFov.x / 2,
+                    region.top - tileOriginShift.y - cameraFov.y / 2);
+            PointF adjustedRegionWidth = new PointF(tileDelta.x * (tileNum.x - 1) + cameraFov.x,
+                    tileDelta.y * (tileNum.y - 1) + cameraFov.y);
+            return new RectF(fullOrigin.x, fullOrigin.y,
+                    fullOrigin.x + adjustedRegionWidth.x,
+                    fullOrigin.y + adjustedRegionWidth.y);
+        }
+        else return null;
+    }
+
+    private PointF getTileOriginShift(PointF tileDelta, Point tileNum) {
+        PointF tileOriginShift = new PointF();
+        tileOriginShift.x = (tileDelta.x*(tileNum.x-1) - region.width())/2;
+        tileOriginShift.y = (tileDelta.y*(tileNum.y-1) - region.height())/2;
+        return tileOriginShift;
+    }
+
     public List<PointF> generateTiles() {
         // note - sign conventions get messy here, but it works so I'm not going to bother
         Log.d("PANORAMA", "Generate tiles called with region " + region.toString());
         Log.d("PANORAMA", "Generate tiles called with region size + (" + region.width() + "x" + region.height() + ")");
         // TODO input sanitation
-        // get camera from settings object - we will need it a lot
-        PanoCamera camera = settings.camera;
-
         // generates a list of tiles which span panorama region according to setting members
         List<PointF> out = new ArrayList<PointF>();
         // first calculate fundamental parameters of tiling common to all configurations
@@ -192,24 +245,16 @@ public class Panorama implements Parcelable {
         PointF tileOrigin = new PointF();
         // tile delta; abs val is spacing, sign encodes what direction tiling is from the origin
         // and thus what corner the origin is
-        PointF tileDelta = new PointF();
-        Point tileNum = new Point(); // number of tiles in each direction
-        // trig to compute AOV + reduce delta by desired overlap
-        Log.d("PANORAMA", "Focal length " + settings.camera.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
-        PointF cameraFov = settings.camera.getCameraFovDeg();
-        tileDelta.x = cameraFov.x * (1.0f-settings.overlap);
-        tileDelta.y = cameraFov.y * (1.0f-settings.overlap);
-        tileNum.x = (int) Math.ceil(region.width()/tileDelta.x);
-        tileNum.y = (int) Math.ceil(region.height()/tileDelta.y);
+        PointF tileDelta;
+        Point tileNum; // number of tiles in each direction
+        //Log.d("PANORAMA", "Focal length " + settings.camera.focalLength + ", camera sensor " + camera.xSize + "x" + camera.ySize + "mm (" + camera.displayName + ")");
+        tileDelta = getBasicTileDelta(); // does not account for 360
+        tileNum = getTileNumFromDelta(tileDelta);
+        tileDelta = getAdjustedTileDelta(tileDelta, tileNum); // account for 360 degree panos
         Log.d("PANORAMA", "Generate tiles calculated tile numbers " + tileNum.toString() + " and tile deltas " + tileDelta.toString());
-        if(is360pano) { // if we have a 360 pano we can adjust spacing slightly to optimize overlap
-            tileDelta.x = (float) (2*Math.PI)/tileNum.x; // space out evenly with slightly more overlap
-        }
         // this is the amount the corner of our tiling will have to be shifted in order to center
         // our over-sized acquisition region on the requested acquisition region
-        PointF tileOriginShift = new PointF();
-        tileOriginShift.x = (tileDelta.x*tileNum.x - region.width())/2;
-        tileOriginShift.y = (tileDelta.y*tileNum.y - region.height())/2;
+        PointF tileOriginShift = getTileOriginShift(tileDelta, tileNum);
         // now we have to do case-by-case parameters
         // due to helper functions, all we have to do are play with signs of things
         switch(settings.corner) { // all corner information encoded in origin and spacing vectors
@@ -241,10 +286,10 @@ public class Panorama implements Parcelable {
         }
         switch(settings.order) {
             case ORDER_ZIGZAG:
-                out = generateZigzagTiling(tileOrigin,tileDelta, tileNum, settings.direction);
+                out = generateZigzagTiling(tileOrigin, tileDelta, tileNum, settings.direction);
                 break;
             case ORDER_WRAP:
-                out = generateWrapTiling(tileOrigin,tileDelta, tileNum, settings.direction);
+                out = generateWrapTiling(tileOrigin, tileDelta, tileNum, settings.direction);
                 break;
             default:
                 // TODO ERROR
@@ -285,7 +330,8 @@ public class Panorama implements Parcelable {
         // if we ignore the fact that our azimuth (x) wraps irl, this line would be sufficient:
         region = getBoundingBox(definingPoints);
         // however at this point we could have x limits [-10, 370] which results in redundant acq.
-        // TODO 360 panorama handling
+        is360pano = region.width() >= 360;
+        // TODO might need more 360 panorama handling
     }
 
     private RectF getBoundingBox(List<PointF> pointsIn) {

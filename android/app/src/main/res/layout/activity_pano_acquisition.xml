@@ -46,7 +46,7 @@
         android:textColor="@color/green_accent"
         app:layout_constraintBottom_toTopOf="@+id/pano_acq_viewer"
         app:layout_constraintEnd_toEndOf="@+id/pano_acq_viewer" />
-    <View
+    <com.example.panotroller.PanoAcqViewportView
         android:id="@+id/pano_acq_viewer"
         android:layout_width="0dp"
         android:layout_height="0dp"
