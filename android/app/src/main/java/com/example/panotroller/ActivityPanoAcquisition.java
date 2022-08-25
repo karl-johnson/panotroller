@@ -183,6 +183,7 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
                         setProgressBarPercent(mAcquisitionService.getProgress());
                         updateRemainingPhotosText();
                     }
+                    mViewport.updateProgress( mAcquisitionService.getPhotosProgress());
                     break;
                 case AcquisitionService.BLUETOOTH_STATUS_UPDATE:
                     mBluetoothBar.update((BluetoothService.BluetoothBarInfo) msg.obj);

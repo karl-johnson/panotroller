@@ -2,6 +2,8 @@ package com.example.panotroller;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.DragEvent;
 import android.view.HapticFeedbackConstants;
@@ -65,6 +67,22 @@ public class SliderSettingsModule extends ConstraintLayout {
         incButton.setOnTouchListener(this::onIncButton);
         decButton.setOnTouchListener(this::onDecButton);
         slider.setOnTouchListener(this::onSliderTouch);
+        valueText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                setValueTo(Float.parseFloat(s.toString()));
+            }
+        });
         attributes.recycle();
         // we recycle this in onFinishInflate!
     }
@@ -112,7 +130,11 @@ public class SliderSettingsModule extends ConstraintLayout {
         float roundedNewVal = roundToNearest(newVal, slider.getStepSize());
         if(roundedNewVal >= slider.getValueFrom() && roundedNewVal <= slider.getValueTo()) {
             slider.setValue(roundedNewVal);
-            valueText.setText(String.valueOf(roundedNewVal));
+            // only update text if we need to, to avoid infinite loop
+            String newValueText = String.valueOf(roundedNewVal);
+            if(!valueText.getText().toString().equals(newValueText)) {
+                valueText.setText(newValueText);
+            }
         }
     }
 

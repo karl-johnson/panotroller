@@ -51,7 +51,7 @@ public class AcquisitionService extends Service {
     private Panorama mPanorama;
     public void setPanorama(Panorama panoramaIn) {mPanorama = panoramaIn;}
     public Panorama getPanorama() { return mPanorama;}
-    private PanographPositionConverter mPositionConverter = new PanographPositionConverter();
+    private final PanographPositionConverter mPositionConverter = new PanographPositionConverter();
 
     private boolean isEnabled = false; // have we been given an instruction list?
     public boolean isEnabled() {return isEnabled;}
