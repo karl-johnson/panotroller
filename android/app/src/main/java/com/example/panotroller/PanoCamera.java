@@ -55,6 +55,10 @@ public class PanoCamera {
     }
 
     public String toString() {
+        return displayName;
+    }
+
+    public String toLongString() {
         return displayName + ": (" + xSize + ", " + ySize + "), ("+ xRes + ", " + yRes + "), " +
                 frameRate + "fps, " + rawSize + " MB. " + focalLength + "mm.";
     }

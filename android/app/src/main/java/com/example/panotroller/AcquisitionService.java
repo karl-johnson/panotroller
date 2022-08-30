@@ -1,5 +1,9 @@
 package com.example.panotroller;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
@@ -9,6 +13,7 @@ import android.content.ServiceConnection;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -37,6 +42,8 @@ public class AcquisitionService extends Service {
 
     public final static int CAM_UPDATE_PERIOD = 100; // ms
 
+    public final static int ONGOING_NOTIFICATION_ID = 1;
+    public final static String ACQ_NOTIF_CHANNEL_ID = "PANO_ACQ";
     /* MEMBERS */
     // for bluetooth service
     private boolean mShouldUnbind = false;
@@ -73,6 +80,36 @@ public class AcquisitionService extends Service {
     @Override
     public void onCreate() {
         Toast.makeText(this, "Acquisition service started", Toast.LENGTH_SHORT).show();
+        // setup foreground stuff
+        Intent notificationIntent = new Intent(this, ActivityPanoAcquisition.class);
+        PendingIntent pendingIntent =
+                PendingIntent.getActivity(this, 0, notificationIntent,
+                        PendingIntent.FLAG_IMMUTABLE);
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Panotroller Acquisition";
+            String description = "lol";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(ACQ_NOTIF_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+            Notification notification =
+                    new Notification.Builder(this, ACQ_NOTIF_CHANNEL_ID)
+                            .setContentTitle("Panotroller")
+                            .setContentText("Acquisition ongoing")
+                            .setSmallIcon(R.drawable.icon)
+                            .setContentIntent(pendingIntent)
+                            .setTicker("lol what is this")
+                            .build();
+            startForeground(ONGOING_NOTIFICATION_ID, notification);
+        }
+        else {
+            Log.e("ACQ_SERVICE", "Failed to start notif channel because old sdk");
+        }
         // bind to BluetoothService
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         mShouldUnbind = bindService(
@@ -105,7 +142,7 @@ public class AcquisitionService extends Service {
             public void run() {
                 try{
                     mBluetoothService.sendInstructionViaThread(
-                            new BluetoothInstruction(GeneratedConstants.INST_GET_POS,(short) 0, (short) 0));
+                           new BluetoothInstruction(GeneratedConstants.INST_GET_POS,(short) 0, (short) 0));
                 }
                 catch (Exception e) {
                     // TODO: handle exception

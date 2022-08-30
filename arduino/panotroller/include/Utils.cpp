@@ -36,6 +36,10 @@ void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
         *readyFlag = true;
         byteIndex = 0; // overwrite old message - kinda dangerous
         messageInProgress = false; // message is over
+        return; // need to exit now so that this instruction can be handled
+        // then any consecutive instructions will be read in once this is called again
+        // if I'm lucky, this one return fixes the issue of consecutive
+        // instructions not being handled
       }
     }
     else if(inByte == START_BYTE) {

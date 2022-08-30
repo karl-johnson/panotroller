@@ -238,7 +238,7 @@ public class ActivityPanoSetup extends AppCompatActivity {
             // start acquisition service if we're not already bound
             if(!mShouldUnbindAcq) {
                 Intent AcqServiceIntent = new Intent(this, AcquisitionService.class);
-                startService(AcqServiceIntent);
+                startForegroundService(AcqServiceIntent);
                 // bind to service so we can give it the instruction list
                 mShouldUnbindAcq = bindService(AcqServiceIntent, mAcquisitionServiceConnection, Context.BIND_AUTO_CREATE);
                 // since this binding is asynchronous, prepareAndStartAcquisition is called in
