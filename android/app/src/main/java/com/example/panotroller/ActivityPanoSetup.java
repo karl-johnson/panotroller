@@ -226,9 +226,10 @@ public class ActivityPanoSetup extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // make back button actually go back
         if (item.getItemId() == android.R.id.home) {
-            onBackPressed(); // use back button logic to do this for us
-
-            // stop acquisition service - this i
+            onBackPressed(); // use back button logic to do this for us NOPE bad idea, can get stuck in infinite loops
+            // TODO make this an intent + animation too
+            // Intent intent = new Intent(getApplicationContext(), ActivityMain.class);
+            // startActivity(intent);
             return true;
         }
         else if(item.getItemId() == R.id.continue_button) {

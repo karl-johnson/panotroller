@@ -115,6 +115,8 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
         }
     }
 
+    // TODO more rigorous way to update UI states + update notification too
+
     /* SERVICE CONNECTIONS - NEEDED TO CONNECT TO SERVICE */
     // IMPORTANT NOTE! Unlike all other Activities, this one doesn't bind to BluetoothService!
     // Instead, we bind to AcquisitionService, which binds to BluetoothService for us
@@ -156,7 +158,10 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             }
             stopService(new Intent(this, AcquisitionService.class));
             // now go to previous activity
+            // TODO this breaks when you open app notifs, just go to panosetup
             onBackPressed(); // use back button logic to do this for us
+            //Intent intent = new Intent(getApplicationContext(), ActivityPanoSetup.class);
+            //startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -195,6 +200,7 @@ public class ActivityPanoAcquisition extends AppCompatActivity {
             }
         }
     }
+
 
     /* HELPER METHODS */
     private void setProgressBarPercent(float percentIn) {

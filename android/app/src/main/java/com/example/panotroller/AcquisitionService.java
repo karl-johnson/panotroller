@@ -90,7 +90,7 @@ public class AcquisitionService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "Panotroller Acquisition";
             String description = "lol";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            int importance = NotificationManager.IMPORTANCE_HIGH;
             NotificationChannel channel = new NotificationChannel(ACQ_NOTIF_CHANNEL_ID, name, importance);
             channel.setDescription(description);
             // Register the channel with the system; you can't change the importance
@@ -100,10 +100,9 @@ public class AcquisitionService extends Service {
             Notification notification =
                     new Notification.Builder(this, ACQ_NOTIF_CHANNEL_ID)
                             .setContentTitle("Panotroller")
-                            .setContentText("Acquisition ongoing")
-                            .setSmallIcon(R.drawable.icon)
+                            .setContentText("Ready to start acquisition!")
+                            .setSmallIcon(R.drawable.notif_icon)
                             .setContentIntent(pendingIntent)
-                            .setTicker("lol what is this")
                             .build();
             startForeground(ONGOING_NOTIFICATION_ID, notification);
         }
@@ -141,7 +140,8 @@ public class AcquisitionService extends Service {
             @Override
             public void run() {
                 try{
-                    mBluetoothService.sendInstructionViaThread(
+                    if(isRunning)
+                        mBluetoothService.sendInstructionViaThread(
                            new BluetoothInstruction(GeneratedConstants.INST_GET_POS,(short) 0, (short) 0));
                 }
                 catch (Exception e) {
