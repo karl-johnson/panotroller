@@ -75,35 +75,28 @@ public class AcquisitionService extends Service {
     private int photoProgress = 0; // number of photos which we've gotten confirmation back on
     public int getPhotosProgress() {return photoProgress;}
 
+
+
     /* PUBLIC METHODS */
 
     @Override
     public void onCreate() {
         Toast.makeText(this, "Acquisition service started", Toast.LENGTH_SHORT).show();
         // setup foreground stuff
-        Intent notificationIntent = new Intent(this, ActivityPanoAcquisition.class);
-        PendingIntent pendingIntent =
-                PendingIntent.getActivity(this, 0, notificationIntent,
-                        PendingIntent.FLAG_IMMUTABLE);
+
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "Panotroller Acquisition";
             String description = "lol";
-            int importance = NotificationManager.IMPORTANCE_HIGH;
+            int importance = NotificationManager.IMPORTANCE_LOW;
             NotificationChannel channel = new NotificationChannel(ACQ_NOTIF_CHANNEL_ID, name, importance);
             channel.setDescription(description);
             // Register the channel with the system; you can't change the importance
             // or other notification behaviors after this
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
-            Notification notification =
-                    new Notification.Builder(this, ACQ_NOTIF_CHANNEL_ID)
-                            .setContentTitle("Panotroller")
-                            .setContentText("Ready to start acquisition!")
-                            .setSmallIcon(R.drawable.notif_icon)
-                            .setContentIntent(pendingIntent)
-                            .build();
+            Notification notification =  getUpdatedNotification("Ready to start acquisition!");
             startForeground(ONGOING_NOTIFICATION_ID, notification);
         }
         else {
@@ -113,6 +106,42 @@ public class AcquisitionService extends Service {
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         mShouldUnbind = bindService(
                 BTServiceIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private Notification getUpdatedNotification(String newText) {
+        Intent notificationIntent = new Intent(this, ActivityPanoAcquisition.class);
+        PendingIntent pendingIntent =
+                PendingIntent.getActivity(this, 0, notificationIntent,
+                        PendingIntent.FLAG_IMMUTABLE);
+        Notification notification =
+                new Notification.Builder(this, ACQ_NOTIF_CHANNEL_ID)
+                        .setContentTitle("Panotroller")
+                        .setContentText(newText)
+                        .setSmallIcon(R.drawable.notif_icon)
+                        .setContentIntent(pendingIntent)
+                        .build();
+        return notification;
+    }
+
+    private void updateNotification(String newText) {
+        Notification notification = getUpdatedNotification(newText);
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(ONGOING_NOTIFICATION_ID, notification);
+    }
+
+    private void updateNotification() {
+        String newText;
+        if(isFinished) {
+            newText = "Acquisition finished.";
+        }
+        else {
+            if (isRunning) {
+                newText = getString(R.string.acq_running_text, photoProgress, totalPhotos);
+            } else {
+                newText = getString(R.string.acq_paused_text, photoProgress, totalPhotos);
+            }
+        }
+        updateNotification(newText);
     }
 
     @Override
@@ -165,6 +194,7 @@ public class AcquisitionService extends Service {
         if(isEnabled && !isRunning) {
             isRunning = true;
             updateAcquisition();
+            updateNotification();
             //Log.d("ACQUISITION", "Acquisition started/resumed");
             return true;
         }
@@ -178,6 +208,7 @@ public class AcquisitionService extends Service {
             //Log.d("ACQUISITION", "Acquisition paused");
             isRunning = false;
         }
+        updateNotification();
     }
 
     private void updateAcquisition() {
@@ -197,6 +228,7 @@ public class AcquisitionService extends Service {
                 isRunning = false;
                 isFinished = true;
             }
+            updateNotification();
             // an update was executed so notify client (if we've been provided a handler)
             if(mExternalHandler != null) {
                 mExternalHandler.obtainMessage(ACQUISITION_STATUS_UPDATE).sendToTarget();

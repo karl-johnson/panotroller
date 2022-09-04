@@ -17,6 +17,7 @@ import androidx.appcompat.widget.Toolbar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class ActivityPanoramaSettings extends AppCompatActivity {
 
@@ -27,14 +28,14 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
     private SliderSettingsModule exposureSlider;
     private Spinner cameraSpinner;
     private Panorama.PanoramaSettings priorSettings;
-    private PanoCamera selectedCamera = null;
+    private String selectedCameraKey = null;
     // ehhhhhhhhh not great
-    private final static String DEFAULT_CAMERA_KEY = "CANON_5D_MARK_II";
+    private final static String DEFAULT_CAMERA_KEY = "Canon 5D Mark II";
 
     private final AdapterView.OnItemSelectedListener itemSelectedListener = new AdapterView.OnItemSelectedListener() {
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            selectedCamera = (PanoCamera) parent.getItemAtPosition(position);
+            selectedCameraKey = (String) parent.getItemAtPosition(position);
         }
 
         @Override
@@ -45,7 +46,6 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Panorama.builtInCameras.keySet();
         super.onCreate(savedInstanceState);
         // apply layout
         setContentView(R.layout.activity_pano_settings);
@@ -56,13 +56,13 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
         exposureSlider = findViewById(R.id.exposureSlider);
         cameraSpinner = findViewById(R.id.cameraSpinner);
         // set up camera spinner
-        List<PanoCamera> cameraList = new ArrayList<PanoCamera>(Panorama.builtInCameras.values());
-        ArrayAdapter<PanoCamera> cameraSpinnerAdapter = new ArrayAdapter<PanoCamera>(
-                this, android.R.layout.simple_spinner_item, cameraList);
+        ArrayList<String> cameraList = new ArrayList<>(Panorama.builtInCameras.keySet());
+        ArrayAdapter<String> cameraSpinnerAdapter = new ArrayAdapter<>(
+                this, R.layout.camera_spinner, cameraList);
         cameraSpinnerAdapter.setDropDownViewResource(R.layout.camera_spinner_item);
         cameraSpinner.setAdapter(cameraSpinnerAdapter);
         cameraSpinner.setOnItemSelectedListener(itemSelectedListener);
-        Log.d("PANO_SETTINGS", "Default: " + Panorama.builtInCameras.get(DEFAULT_CAMERA_KEY).toString());
+        Log.d("PANO_SETTINGS", "Default: " + Panorama.builtInCameras.get(DEFAULT_CAMERA_KEY));
         //cameraSpinner.setSelection(cameraSpinnerAdapter.getPosition(Panorama.builtInCameras.get(DEFAULT_CAMERA_KEY)));
         //selectedCamera = Panorama.builtInCameras.get(DEFAULT_CAMERA_KEY);
         // set UI members based on existing settings
@@ -75,12 +75,15 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
             exposureSlider.setValueTo((float) priorSettings.exposureTime / 1000f);
             //cameraSpinner.setSelection(cameraSpinnerAdapter.getPosition(Panorama.builtInCameras.get(DEFAULT_CAMERA_KEY)));
             //selectedCamera = Panorama.builtInCameras.get(DEFAULT_CAMERA_KEY);
-            // TODO fix issue where camera doesn't match because focal length is different
-            Log.d("PANO_SETTINGS", "Loaded: " + cameraSpinnerAdapter.getPosition(priorSettings.camera));
-            cameraSpinner.setSelection(cameraSpinnerAdapter.getPosition(priorSettings.camera), true);
+            // fixed issue in here where different focal length changes camera object, so it's not
+            // in builtInCameras. Did this with a hack job where the key string is the same as the
+            // display name - the correct way is to have the camera body being a separate object
+            // from the lens that's on it (or nested)
+            Log.d("PANO_SETTINGS", "Loaded: " + cameraSpinnerAdapter.getPosition(priorSettings.camera.toString()));
+            cameraSpinner.setSelection(cameraSpinnerAdapter.getPosition(priorSettings.camera.toString()), true);
             // need to put this in because Android drawing bug or something
             // cameraSpinnerAdapter.notifyDataSetChanged();
-            selectedCamera = priorSettings.camera;
+            selectedCameraKey = priorSettings.camera.toString();
         }
         else {
             //cameraSpinner.setSelection(cameraSpinnerAdapter.getPosition(Panorama.builtInCameras.get(DEFAULT_CAMERA_KEY)));
@@ -105,7 +108,7 @@ public class ActivityPanoramaSettings extends AppCompatActivity {
         // first built panorama settings object from UI state
         Panorama.PanoramaSettings settings = new Panorama.PanoramaSettings();
         // TODO allow camera selection
-        settings.camera = selectedCamera;
+        settings.camera = Panorama.builtInCameras.get(selectedCameraKey);
         settings.camera.focalLength = focalSlider.getValue();
         settings.overlap = overlapSlider.getValue()/100; // convert from % to decimal
         // both times are in float seconds for user but short ms internally

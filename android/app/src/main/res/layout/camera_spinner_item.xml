@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<TextView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- copied from https://android.googlesource.com/platform/frameworks/base/+/master/core/res/res/layout/simple_spinner_dropdown_item.xml -->
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
+    style="?android:attr/spinnerDropDownItemStyle"
+    android:singleLine="true"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="?attr/dropdownListPreferredItemHeight"
+    android:ellipsize="marquee"
+    android:textColor="@color/white"
     android:textSize="20sp"
-    android:gravity="start"
-    android:textColor="#FFFFFF"
-    android:background="@color/light_grey"
-    android:padding="5dip"
-    />
+    android:background="@color/grey_bkd"/>

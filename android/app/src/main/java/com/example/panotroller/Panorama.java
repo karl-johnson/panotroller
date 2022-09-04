@@ -41,11 +41,13 @@ public class Panorama implements Parcelable {
     // data from digicamdb.com; TODO experiments to determine frame rate
     public final static Map<String, PanoCamera> builtInCameras;
     static {
+        // kinda yucky but you can't spend forever on little organizational things like this:
+        // camera spinner relies on keys here being the same as what each PanoCamera's displayName is
         builtInCameras = new HashMap<String, PanoCamera>() {{
-            put("CANON_5D_MARK_II", new PanoCamera("Canon 5D Mark II", 36.0f, 24.0f, 5616, 3744, 1f, 30));
-            put("CANON_6D", new PanoCamera("Canon 6D", 36.0f, 24.0f, 5472, 3648, 1f, 30));
-            put("CANON_7D_MARK_II", new PanoCamera("Canon 7D Mark II", 22.4f, 15f, 5486, 3682, 1f, 25));
-            put("CANON_40D", new PanoCamera("Canon 40D", 22.2f, 14.8f, 3888, 2592, 1f, 12));
+            put("Canon 5D Mark II", new PanoCamera("Canon 5D Mark II", 36.0f, 24.0f, 5616, 3744, 1f, 30));
+            put("Canon 6D", new PanoCamera("Canon 6D", 36.0f, 24.0f, 5472, 3648, 1f, 30));
+            put("Canon 7D Mark II", new PanoCamera("Canon 7D Mark II", 22.4f, 15f, 5486, 3682, 1f, 25));
+            put("Canon 40D", new PanoCamera("Canon 40D", 22.2f, 14.8f, 3888, 2592, 1f, 12));
         }};
     }
 
@@ -449,7 +451,7 @@ public class Panorama implements Parcelable {
         public int direction = DIRECTION_COLUMN;
         public int corner = CORNER_TOP_LEFT;
         // to avoid parceling cameras (which are static anyways) simply store name
-        public PanoCamera camera = builtInCameras.get("CANON_5D_MARK_II"); // default camera
+        public PanoCamera camera = builtInCameras.get("Canon 5D Mark II"); // default camera
         public float overlap = 0.2f; // desired overlap between tiles in panorama (change to %?)
         // settings which impact timing
         public short settleTime = 0; // desired settle time after end of move before exposure starts

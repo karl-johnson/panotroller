@@ -4,4 +4,8 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="pano_setup_photos">%1$d Photos (%2$d x %3$d) | %4$.1f GB</string>
     <string name="pano_setup_resolution">%1$.1f Gigapixels (%2$d x %3$d) | %4$.2f GB</string>
+
+    <string name="acq_running_text">Acquisition running (%1$d/%2$d).</string>
+    <string name="acq_paused_text">Acquisition paused (%1$d/%2$d).</string>
+
 </resources>
