@@ -71,10 +71,10 @@ void setup() {
 
   // configure stepper motors
   stepperX.setMaxSpeed(400.0);
-  stepperX.setAcceleration(500.0);
+  stepperX.setAcceleration(200.0);
   stepperX.setPinsInverted(DO_INVERT_X_OUTPUT);
   stepperY.setMaxSpeed(400.0);
-  stepperY.setAcceleration(500.0);
+  stepperY.setAcceleration(200.0);
   stepperY.setPinsInverted(DO_INVERT_Y_OUTPUT);
 
   //
